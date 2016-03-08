@@ -98,29 +98,28 @@ void MX_TIM1_Init(void)
 /* TIM3 init function */
 void MX_TIM3_Init(void)
 {
+  TIM_Encoder_InitTypeDef sConfig;
   TIM_MasterConfigTypeDef sMasterConfig;
-  TIM_IC_InitTypeDef sConfigIC;
 
   htim3.Instance = TIM3;
   htim3.Init.Prescaler = 0;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 0;
+  htim3.Init.Period = 65535;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  HAL_TIM_IC_Init(&htim3);
+  sConfig.EncoderMode = TIM_ENCODERMODE_TI1;
+  sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC1Filter = 0;
+  sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC2Filter = 0;
+  HAL_TIM_Encoder_Init(&htim3, &sConfig);
 
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig);
-
-  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
-  sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
-  sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
-  sConfigIC.ICFilter = 0;
-  HAL_TIM_IC_ConfigChannel(&htim3, &sConfigIC, TIM_CHANNEL_1);
-
-  HAL_TIM_IC_ConfigChannel(&htim3, &sConfigIC, TIM_CHANNEL_2);
-
-  HAL_TIM_IC_ConfigChannel(&htim3, &sConfigIC, TIM_CHANNEL_3);
 
 }
 
@@ -140,11 +139,11 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
   }
 }
 
-void HAL_TIM_IC_MspInit(TIM_HandleTypeDef* htim_ic)
+void HAL_TIM_Encoder_MspInit(TIM_HandleTypeDef* htim_encoder)
 {
 
   GPIO_InitTypeDef GPIO_InitStruct;
-  if(htim_ic->Instance==TIM3)
+  if(htim_encoder->Instance==TIM3)
   {
   /* USER CODE BEGIN TIM3_MspInit 0 */
 
@@ -154,8 +153,7 @@ void HAL_TIM_IC_MspInit(TIM_HandleTypeDef* htim_ic)
   
     /**TIM3 GPIO Configuration    
     PA6     ------> TIM3_CH1
-    PA7     ------> TIM3_CH2
-    PB0     ------> TIM3_CH3 
+    PA7     ------> TIM3_CH2 
     */
     GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
@@ -163,13 +161,6 @@ void HAL_TIM_IC_MspInit(TIM_HandleTypeDef* htim_ic)
     GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
     GPIO_InitStruct.Alternate = GPIO_AF2_TIM3;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-    GPIO_InitStruct.Pin = GPIO_PIN_0;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
-    GPIO_InitStruct.Alternate = GPIO_AF2_TIM3;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* USER CODE BEGIN TIM3_MspInit 1 */
 
@@ -219,10 +210,10 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
   /* USER CODE END TIM1_MspDeInit 1 */
 }
 
-void HAL_TIM_IC_MspDeInit(TIM_HandleTypeDef* htim_ic)
+void HAL_TIM_Encoder_MspDeInit(TIM_HandleTypeDef* htim_encoder)
 {
 
-  if(htim_ic->Instance==TIM3)
+  if(htim_encoder->Instance==TIM3)
   {
   /* USER CODE BEGIN TIM3_MspDeInit 0 */
 
@@ -232,12 +223,9 @@ void HAL_TIM_IC_MspDeInit(TIM_HandleTypeDef* htim_ic)
   
     /**TIM3 GPIO Configuration    
     PA6     ------> TIM3_CH1
-    PA7     ------> TIM3_CH2
-    PB0     ------> TIM3_CH3 
+    PA7     ------> TIM3_CH2 
     */
     HAL_GPIO_DeInit(GPIOA, GPIO_PIN_6|GPIO_PIN_7);
-
-    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_0);
 
   }
   /* USER CODE BEGIN TIM3_MspDeInit 1 */
@@ -246,19 +234,6 @@ void HAL_TIM_IC_MspDeInit(TIM_HandleTypeDef* htim_ic)
 } 
 
 /* USER CODE BEGIN 1 */
-void TIM3_HallInit(void)
-{
-  TIM_HallSensor_InitTypeDef sConfigHS;
-
-  sConfigHS.IC1Polarity = TIM_INPUTCHANNELPOLARITY_RISING;
-  sConfigHS.IC1Prescaler = TIM_ICPSC_DIV1;
-  sConfigHS.IC1Filter = 0;
-  sConfigHS.Commutation_Delay = 1;
-
-  HAL_TIMEx_HallSensor_Init(&htim3, &sConfigHS);
-
-}
-
 
 void TIM_PWM_SetPulse(TIM_HandleTypeDef* TIMx,uint32_t pulse )
 {

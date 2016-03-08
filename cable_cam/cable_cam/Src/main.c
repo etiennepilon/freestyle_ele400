@@ -33,6 +33,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
 #include "adc.h"
+#include "spi.h"
 #include "tim.h"
 #include "gpio.h"
 
@@ -79,19 +80,22 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM1_Init();
   MX_TIM3_Init();
+//  MX_SPI3_Init();
 
   /* USER CODE BEGIN 2 */
-  TIM3_HallInit();
+
+  HAL_TIM_Encoder_Start(&htim3,TIM3);
   HAL_TIM_PWM_Start (&htim1, TIM1);
   HAL_ADC_Start(&hadc1);
+//  HAL_TIM_Encoder_Start(&htim3,TIM_CHANNEL_1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
-      adcValue = HAL_ADC_GetValue(&hadc1);
+	  adcValue = TIM3->CNT*100;
+//      adcValue = HAL_ADC_GetValue(&hadc1);
       TIM_PWM_SetPulse(&htim1,adcValue+3000);
   /* USER CODE END WHILE */
 

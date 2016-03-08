@@ -59,7 +59,8 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
                 
 
 /* USER CODE BEGIN Prototypes */
-
+void TIM3_encoderInit(void);
+void TIM_PWM_SetPulse(TIM_HandleTypeDef* TIMx,uint32_t pulse );
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
