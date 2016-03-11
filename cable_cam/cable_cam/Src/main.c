@@ -83,7 +83,7 @@ int main(void)
   MX_USART2_UART_Init();
 
   /* USER CODE BEGIN 2 */
-  HAL_TIMEx_HallSensor_Start(&htim3);
+  HAL_TIM_Encoder_Start(&htim3,TIM3);
   HAL_TIM_PWM_Start (&htim1, TIM1);
   HAL_ADC_Start(&hadc1);
 //  HAL_TIM_Encoder_Start(&htim3,TIM_CHANNEL_1);
@@ -94,8 +94,8 @@ int main(void)
   while (1)
   {
 	  char *msg = "Hello Nucleo Fun!\n\r";
-	  adcValue = TIM3->CNT;
-//      adcValue = HAL_ADC_GetValue(&hadc1);
+//	  adcValue = TIM3->CNT;
+      adcValue = HAL_ADC_GetValue(&hadc1);
       TIM_PWM_SetPulse(&htim1,adcValue+3000);
       printf("%lu\r",adcValue);
      // HAL_Delay(20);
