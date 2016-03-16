@@ -87,7 +87,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_TIM_Encoder_Start(&htim3,TIM3);
   HAL_TIM_PWM_Start (&htim1, TIM1);
-  HAL_ADC_Start(&hadc1);
+  HAL_ADC_Start(&hadc1);//
   HAL_TIM_Base_Start_IT(&htim4);
 //  HAL_TIM_Encoder_Start(&htim3,TIM_CHANNEL_1);
   /* USER CODE END 2 */
