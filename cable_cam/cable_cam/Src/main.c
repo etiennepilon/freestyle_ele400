@@ -82,11 +82,13 @@ int main(void)
   MX_TIM3_Init();
   MX_USART2_UART_Init();
   MX_TIM11_Init();
+  MX_TIM4_Init();
 
   /* USER CODE BEGIN 2 */
   HAL_TIM_Encoder_Start(&htim3,TIM3);
   HAL_TIM_PWM_Start (&htim1, TIM1);
   HAL_ADC_Start(&hadc1);
+  HAL_TIM_Base_Start_IT(&htim4);
 //  HAL_TIM_Encoder_Start(&htim3,TIM_CHANNEL_1);
   /* USER CODE END 2 */
 
@@ -94,17 +96,22 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  char *msg = "Hello Nucleo Fun!\n\r";
 //	  adcValue = TIM3->CNT;
       adcValue = HAL_ADC_GetValue(&hadc1);
       TIM_PWM_SetPulse(&htim1,adcValue+3000);
-      printf("%lu\r",TIM3->CNT);
+      printf("%ld\r",get_rpm());
      // HAL_Delay(20);
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
 //	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
   }
+
+
+
+
+
+
   /* USER CODE END 3 */
 
 }
