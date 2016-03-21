@@ -36,10 +36,10 @@
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
-#include "NRF24L01.h"
+
 
 /* USER CODE BEGIN Includes */
-
+#include "NRF24L01.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -66,9 +66,12 @@ int main(void)
 
   /* USER CODE BEGIN 1 */
 	//uint8_t tx_data[3] = {'0','\n','\r'};
-	uint8_t tx_data[32];
+	//uint8_t tx_data[32];
 	uint8_t rx_data[32];
-	uint64_t cable_cam_add = 0x010203;
+	uint8_t erreur[8] = {' ','=',' ','E','C','H','E','C'};
+	// STM32F091 (DEBUG a L'appart)
+	//uint64_t cable_cam_add = 0x010203;
+	uint64_t cable_cam_add = 0x515151;
 	uint8_t NRF24L01_Status;
 	//uint8_t rx_data[3];
   /* USER CODE END 1 */
@@ -128,7 +131,7 @@ int main(void)
 			  NRF24L01_Clear_TX_DS(&hspi3,NRF24L01_Status);
 		  }
 		  if(NRF24L01_Status & (1<<MAX_RT)){
-			  HAL_UART_Transmit_IT(&huart2," = ECHEC",8);	// DEBUG
+			  HAL_UART_Transmit_IT(&huart2,erreur,sizeof(erreur));	// DEBUG
 			  rx_data[0]='\n';								// DEBUG
 			  rx_data[1]='\r';								// DEBUG
 			  HAL_UART_Transmit_IT(&huart2,rx_data,2);		// DEBUG
