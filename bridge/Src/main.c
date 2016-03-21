@@ -109,12 +109,12 @@ int main(void)
 		  if((rx_data[0]=='\n')||(rx_data[0]=='\r')) {
 			  rx_data[0]='\n';
 			  rx_data[1]='\r';
-			  HAL_UART_Transmit_IT(&huart2,rx_data,2);
+			  HAL_UART_Transmit_IT(&huart2,rx_data,2);		// DEBUG
 			  NRF24L01_Transmit(&hspi3,cable_cam_add,&rx_data[0],1,TRUE);
 			  NRF24L01_Transmit(&hspi3,cable_cam_add,&rx_data[1],1,TRUE);
 		  }
 		  else {
-			  HAL_UART_Transmit_IT(&huart2,rx_data,1);
+			  HAL_UART_Transmit_IT(&huart2,rx_data,1);		// DEBUG
 			  NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,1,TRUE);
 		  }
 		  HAL_UART_Receive_IT(&huart2,rx_data,1);
@@ -128,10 +128,10 @@ int main(void)
 			  NRF24L01_Clear_TX_DS(&hspi3,NRF24L01_Status);
 		  }
 		  if(NRF24L01_Status & (1<<MAX_RT)){
-			  HAL_UART_Transmit_IT(&huart2," = ECHEC",5);
-			  rx_data[0]='\n';
-			  rx_data[1]='\r';
-			  HAL_UART_Transmit_IT(&huart2,rx_data,2);
+			  HAL_UART_Transmit_IT(&huart2," = ECHEC",5);	// DEBUG
+			  rx_data[0]='\n';								// DEBUG
+			  rx_data[1]='\r';								// DEBUG
+			  HAL_UART_Transmit_IT(&huart2,rx_data,2);		// DEBUG
 			  NRF24L01_Flush(&hspi3,TX);
 			  NRF24L01_Clear_MAX_RT(&hspi3,NRF24L01_Status);
 		  }
