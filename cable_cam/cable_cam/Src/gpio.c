@@ -43,6 +43,7 @@
 /*----------------------------------------------------------------------------*/
 /* USER CODE BEGIN 1 */
 static uint32_t distance;
+static uint8_t flagIrq;
 /* USER CODE END 1 */
 
 /** Configure pins as 
@@ -100,6 +101,9 @@ void MX_GPIO_Init(void)
   HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI4_IRQn);
 
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
@@ -117,12 +121,26 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		distance = htim11.Instance->CNT;
 //		distance = 5000;
 	}
+	else if (GPIO_Pin == GPIO_PIN_7)
+	{
+		flagIrq = 1;
+	}
 }
 
+uint8_t get_flag_IRQ(void)
+{
+	return flagIrq;
+}
+void clear_flag_IRQ(void)
+{
+	flagIrq = 0;
+}
 int32_t get_distance(void)
 {
 	return distance;
 }
+
+
 /* USER CODE END 2 */
 
 /**
