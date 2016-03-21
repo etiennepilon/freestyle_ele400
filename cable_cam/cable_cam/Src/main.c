@@ -33,6 +33,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
 #include "adc.h"
+#include "spi.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -83,6 +84,7 @@ int main(void)
   MX_USART2_UART_Init();
   MX_TIM11_Init();
   MX_TIM4_Init();
+  MX_SPI3_Init();
 
   /* USER CODE BEGIN 2 */
   HAL_TIM_Encoder_Start(&htim3,TIM3);
