@@ -121,14 +121,14 @@ int main(void)
 		  clear_huart2_flag();
 	  }
 
-	  /* NRF24L01 */
+	  // NRF24L01
 	  if(get_IRQ_flag()){
 		  NRF24L01_Status = NRF24L01_Read_Status(&hspi3);
 		  if(NRF24L01_Status & (1<<TX_DS)){
 			  NRF24L01_Clear_TX_DS(&hspi3,NRF24L01_Status);
 		  }
 		  if(NRF24L01_Status & (1<<MAX_RT)){
-			  HAL_UART_Transmit_IT(&huart2," = ECHEC",5);	// DEBUG
+			  HAL_UART_Transmit_IT(&huart2," = ECHEC",8);	// DEBUG
 			  rx_data[0]='\n';								// DEBUG
 			  rx_data[1]='\r';								// DEBUG
 			  HAL_UART_Transmit_IT(&huart2,rx_data,2);		// DEBUG
