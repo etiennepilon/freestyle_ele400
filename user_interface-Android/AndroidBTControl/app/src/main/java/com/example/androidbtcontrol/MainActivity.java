@@ -50,6 +50,7 @@ public class MainActivity extends ActionBarActivity {
     LinearLayout inputPane;
     EditText inputField;
     Button btnSend;
+    SeekBar speedSlider;
 
     ArrayAdapter<BluetoothDevice> pairedDeviceAdapter;
     private UUID myUUID;
@@ -58,6 +59,8 @@ public class MainActivity extends ActionBarActivity {
 
     ThreadConnectBTdevice myThreadConnectBTdevice;
     ThreadConnected myThreadConnected;
+    //- Cable Cam Message Factory
+    CableCamMessageFactory messageFactory = new CableCamMessageFactory();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,6 +91,30 @@ public class MainActivity extends ActionBarActivity {
             finish();
             return;
         }
+        // - Speed slider
+        speedSlider = (SeekBar)findViewById(R.id.speed_slider_id);
+        speedSlider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            public void onStopTrackingTouch(SeekBar bar)
+            {
+                int value = bar.getProgress(); // the value of the seekBar progress
+            }
+
+            public void onStartTrackingTouch(SeekBar bar)
+            {
+
+            }
+
+            public void onProgressChanged(SeekBar bar,
+                                          int paramInt, boolean paramBoolean)
+            {
+                //System.out.println("Value: " + paramInt);
+                //messageFactory.getSpeedMessage(paramInt);
+                if (myThreadConnected != null){
+                    byte[] msg = messageFactory.getSpeedMessageChar(paramInt).getBytes();
+                    myThreadConnected.write(msg);
+                }
+            }
+        });
 
         //using the well-known SPP UUID
         myUUID = UUID.fromString(UUID_STRING_WELL_KNOWN_SPP);
@@ -354,5 +381,24 @@ public class MainActivity extends ActionBarActivity {
             }
         }
     }
+    private class CableCamMessageFactory{
+        // - Speed Header
+        //  { = 123 (ASCII Value)
+        //  | = 124 (ASCII Value)
+        private final String Speed_Header = "{|";
+        // - Command Header
+        //  } = 125 (ASCII Value)
+        //  ~ = 126 (ASCII Value)
+        private final String Command_Header = "}~";
 
+        public String getSpeedMessageChar(int speed){
+            //String result = Speed_Header + speed;
+            char speed_char = (char) speed;
+            //System.out.println(Speed_Header + speed_char);
+            return Speed_Header + speed_char;
+        }
+        public String getSpeedMessageString(int speed){
+            return Speed_Header + speed;
+        }
+    }
 }
