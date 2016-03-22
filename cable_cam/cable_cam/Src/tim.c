@@ -373,7 +373,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if (htim->Instance==TIM11) //check if the interrupt comes from TIM11
 		{
-		HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
+//		HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
 		}
 	else if (htim->Instance==TIM3) //check if the interrupt comes from TIM11
 		{

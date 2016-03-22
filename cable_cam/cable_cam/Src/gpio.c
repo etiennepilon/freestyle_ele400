@@ -43,7 +43,7 @@
 /*----------------------------------------------------------------------------*/
 /* USER CODE BEGIN 1 */
 static uint32_t distance;
-static uint8_t flagIrq;
+static uint8_t flagIrq = 0;
 /* USER CODE END 1 */
 
 /** Configure pins as 

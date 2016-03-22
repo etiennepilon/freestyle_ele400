@@ -81,7 +81,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_ADC1_Init();
+//  MX_ADC1_Init();
   MX_TIM1_Init();
   MX_TIM3_Init();
   MX_USART2_UART_Init();
@@ -105,23 +105,24 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
   while (1)
   {
-//	  adcValue = TIM3->CNT;
-      adcValue = HAL_ADC_GetValue(&hadc1);
+
+	  adcValue = TIM3->CNT;
+//      adcValue = HAL_ADC_GetValue(&hadc1);
       TIM_PWM_SetPulse(&htim1,adcValue+3000);
 //      printf("penis%lu\r",rx_data[0]);
-      printf("penis");
-
 
 	  if(get_flag_IRQ()){
 		  NRF24L01_Status= NRF24L01_Read_Status(&hspi3);
+		  printf("IRQ\r");
 		  if(NRF24L01_Status & (1<<RX_DR)){
 			  rx_data[0]=NRF24L01_Read_Data_Pipe_Number(&hspi3,NRF24L01_Status);
 			  NRF24L01_Read_RX_Payload(&hspi3,rx_data,1);
 			  HAL_UART_Transmit(&huart2,rx_data,1,1000);
 			  NRF24L01_Clear_RX_DR(&hspi3,NRF24L01_Status);
-
+			  HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
 
 		  }
 		  clear_flag_IRQ();
