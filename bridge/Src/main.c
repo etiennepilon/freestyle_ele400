@@ -91,7 +91,12 @@ int main(void)
   MX_USART2_UART_Init();
 
   /* USER CODE BEGIN 2 */
+  // Bridge
   NRF24l01_Initialization(&hspi3,PTX);
+
+  // Cable Cam
+  //NRF24l01_Initialization(&hspi3,PRX);
+
   HAL_TIM_Base_Start_IT(&htim9);
   /* USER CODE END 2 */
 
@@ -137,6 +142,14 @@ int main(void)
 			  HAL_UART_Transmit_IT(&huart2,rx_data,2);		// DEBUG
 			  NRF24L01_Flush(&hspi3,TX);
 			  NRF24L01_Clear_MAX_RT(&hspi3,NRF24L01_Status);
+		  }
+		  if(NRF24L01_Status & (1<<RX_DR)){
+			  rx_data[0]=NRF24L01_Read_Data_Pipe_Number(&hspi3,NRF24L01_Status);
+			  NRF24L01_Read_RX_Payload(&hspi3,rx_data,1);
+			  HAL_UART_Transmit_IT(&huart2,rx_data,1);
+			  NRF24L01_Clear_RX_DR(&hspi3,NRF24L01_Status);
+			  //HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
+
 		  }
 		  clear_IRQ_flag();
 	  }

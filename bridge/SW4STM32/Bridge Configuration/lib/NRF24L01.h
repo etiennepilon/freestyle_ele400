@@ -6,7 +6,12 @@
 /* USER CODE BEGIN Private defines */
 
 // 			 Rx Adresse
-#define ADRESSE_PIPE_1_RX 0x515151
+
+// Bridge
+#define ADRESSE_PIPE_1_RX 0x555555
+
+// Cable Cam
+//#define ADRESSE_PIPE_1_RX 0x515151
 
 
 //**********************************//
