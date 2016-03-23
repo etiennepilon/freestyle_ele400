@@ -112,6 +112,11 @@ public class MainActivity extends ActionBarActivity {
                 if (myThreadConnected != null){
                     byte[] msg = messageFactory.getSpeedMessageChar(paramInt).getBytes();
                     myThreadConnected.write(msg);
+                    try {
+                        Thread.sleep(200);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         });
@@ -225,7 +230,6 @@ public class MainActivity extends ActionBarActivity {
 
         private ThreadConnectBTdevice(BluetoothDevice device) {
             bluetoothDevice = device;
-
             try {
                 bluetoothSocket = device.createRfcommSocketToServiceRecord(myUUID);
                 textStatus.setText("bluetoothSocket: \n" + bluetoothSocket);

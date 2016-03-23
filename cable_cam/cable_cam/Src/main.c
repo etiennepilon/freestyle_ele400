@@ -39,8 +39,11 @@
 #include "gpio.h"
 
 
+
 /* USER CODE BEGIN Includes */
 #include "NRF24L01.h"
+#include "stdio.h"
+#include "string.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -48,8 +51,9 @@
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
  uint32_t adcValue = 0;
- uint8_t rx_data[10];
+ uint32_t rx_data[10];
  uint8_t NRF24L01_Status;
+ sRX rxStruct;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -108,22 +112,21 @@ int main(void)
 
   while (1)
   {
-
 	  adcValue = TIM3->CNT;
 //      adcValue = HAL_ADC_GetValue(&hadc1);
-      TIM_PWM_SetPulse(&htim1,adcValue+3000);
-//      printf("penis%lu\r",rx_data[0]);
-
+//      TIM_PWM_SetPulse(&htim1,adcValue+3000);
+      TIM_PWM_SetPulse(&htim1,(rxStruct.torque*30)+3000);
+	  HAL_UART_Transmit(&huart2,rx_data,3,1000);
 	  if(get_flag_IRQ()){
 		  NRF24L01_Status= NRF24L01_Read_Status(&hspi3);
 		  //printf("IRQ\r");
 		  if(NRF24L01_Status & (1<<RX_DR)){
 			  rx_data[0]=NRF24L01_Read_Data_Pipe_Number(&hspi3,NRF24L01_Status);
-			  NRF24L01_Read_RX_Payload(&hspi3,rx_data,1);
-			  HAL_UART_Transmit(&huart2,rx_data,1,1000);
+			  NRF24L01_Read_RX_Payload(&hspi3,rx_data,RX_PIPE_1_PAYLOAD);
+			  HAL_UART_Transmit(&huart2,rx_data,3,1000);
+			  parseRXMessage(rx_data,&rxStruct);
 			  NRF24L01_Clear_RX_DR(&hspi3,NRF24L01_Status);
 			  HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
-
 		  }
 		  clear_flag_IRQ();
 	  }
@@ -183,7 +186,31 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+void parseRXMessage(uint32_t *rxBuffer, sRX *rxData)
+{
+	char *torqueHeader = "{|";
+	char *commandHeader = "";
 
+	if (!(memcmp(torqueHeader,rxBuffer,2)))
+	{
+		rxData->torque = rxBuffer[3];
+	}
+	else if (!(memcmp(commandHeader,rxBuffer,2)))
+	{
+		switch ( rxBuffer[3] )
+		{
+			case 'A':
+				rxData->emergencyStop = 1;
+			  break;
+			case 'K':
+				rxData->keepAlive = 1;
+			  break;
+			default:
+				printf("error\r");
+			  break;
+		}
+	}
+}
 /* USER CODE END 4 */
 
 #ifdef USE_FULL_ASSERT

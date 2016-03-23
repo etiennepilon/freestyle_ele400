@@ -65,6 +65,14 @@ typedef union __uTelemetry
 	sTelemetry telemetry;
 }uTelemetry;
 
+typedef struct __sRX
+{
+	uint8_t torque;
+	uint8_t emergencyStop:1;
+	uint8_t keepAlive:1;
+	uint8_t notUse:6;
+}sRX;
+
 /* USER CODE END Private defines */
 
 void MX_SPI3_Init(void);
@@ -72,6 +80,7 @@ void MX_SPI3_Init(void);
 /* USER CODE BEGIN Prototypes */
 void getTelemData(uTelemetry *data);
 void setTelemData(uTelemetry *data);
+void parseRXMessage(uint32_t rxBuffer[], sRX *rxData);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

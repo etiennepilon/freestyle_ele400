@@ -151,7 +151,7 @@
 
 #define RX_ADDR_P1_REGISTER 0x0B
 //#define ADRESSE_PIPE_1 :
-#define RX_PIPE_1_PAYLOAD	1
+#define RX_PIPE_1_PAYLOAD	3
 										//	Les pipes 2 a 5 ont seulement un octet ( Le moins significatif). Les autres octets
 										//	sont les memes que l'adresse de la pipe 1.
 #define RX_ADDR_P2_REGISTER 0x0C
