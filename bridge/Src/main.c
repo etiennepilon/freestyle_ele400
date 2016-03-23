@@ -103,6 +103,8 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   //HAL_UART_Transmit_IT(&huart2,tx_data,3);
+
+  // Bridge
   HAL_UART_Receive_IT(&huart2,rx_data,1);
 
   while (1)
