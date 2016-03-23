@@ -43,7 +43,7 @@
 /*----------------------------------------------------------------------------*/
 /* USER CODE BEGIN 1 */
 static uint32_t distance;
-static uint8_t flagIrq = 0;
+static uint8_t flagIrq;
 /* USER CODE END 1 */
 
 /** Configure pins as 
@@ -87,7 +87,7 @@ void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : PtPin */
   GPIO_InitStruct.Pin = IRQ_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(IRQ_GPIO_Port, &GPIO_InitStruct);
 

@@ -116,7 +116,7 @@ int main(void)
 
 	  if(get_flag_IRQ()){
 		  NRF24L01_Status= NRF24L01_Read_Status(&hspi3);
-		  printf("IRQ\r");
+		  //printf("IRQ\r");
 		  if(NRF24L01_Status & (1<<RX_DR)){
 			  rx_data[0]=NRF24L01_Read_Data_Pipe_Number(&hspi3,NRF24L01_Status);
 			  NRF24L01_Read_RX_Payload(&hspi3,rx_data,1);
