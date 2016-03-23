@@ -56,8 +56,8 @@ void MX_SPI3_Init(void)
   hspi3.Init.NSS = SPI_NSS_SOFT;
   hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
   hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
-  hspi3.Init.TIMode = SPI_TIMODE_DISABLED;
-  hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLED;
+  hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
   hspi3.Init.CRCPolynomial = 10;
   HAL_SPI_Init(&hspi3);
 
@@ -73,7 +73,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi)
 
   /* USER CODE END SPI3_MspInit 0 */
     /* Peripheral clock enable */
-    __SPI3_CLK_ENABLE();
+    __HAL_RCC_SPI3_CLK_ENABLE();
   
     /**SPI3 GPIO Configuration    
     PC10     ------> SPI3_SCK
@@ -83,7 +83,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi)
     GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF6_SPI3;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
@@ -102,7 +102,7 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* hspi)
 
   /* USER CODE END SPI3_MspDeInit 0 */
     /* Peripheral clock disable */
-    __SPI3_CLK_DISABLE();
+    __HAL_RCC_SPI3_CLK_DISABLE();
   
     /**SPI3 GPIO Configuration    
     PC10     ------> SPI3_SCK
