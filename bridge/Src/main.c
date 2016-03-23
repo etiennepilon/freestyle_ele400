@@ -37,7 +37,6 @@
 #include "usart.h"
 #include "gpio.h"
 
-
 /* USER CODE BEGIN Includes */
 #include "NRF24L01.h"
 /* USER CODE END Includes */
@@ -65,15 +64,17 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-	//uint8_t tx_data[3] = {'0','\n','\r'};
 	//uint8_t tx_data[32];
 	uint8_t rx_data[32];
-	uint8_t erreur[8] = {' ','=',' ','E','C','H','E','C'};
+	//uint8_t erreur[8] = {' ','=',' ','E','C','H','E','C'};
+
 	// STM32F091 (DEBUG a L'appart)
 	//uint64_t cable_cam_add = 0x010203;
+
+	// Bridge
 	uint64_t cable_cam_add = 0x515151;
 	uint8_t NRF24L01_Status;
-	//uint8_t rx_data[3];
+
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/
@@ -89,6 +90,7 @@ int main(void)
   MX_SPI3_Init();
   MX_TIM9_Init();
   MX_USART2_UART_Init();
+  MX_USART1_UART_Init();
 
   /* USER CODE BEGIN 2 */
   // Bridge
@@ -105,17 +107,25 @@ int main(void)
   //HAL_UART_Transmit_IT(&huart2,tx_data,3);
 
   // Bridge
-  HAL_UART_Receive_IT(&huart2,rx_data,1);
+  rx_data[0] = 'O';  // DEBUG
+  rx_data[1] = 'K';
+  rx_data[2] = ' ';
+  NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,RX_PIPE_1_PAYLOAD,TRUE); // DEBUG
+  HAL_UART_Receive_IT(&huart2,rx_data,1);   // PUTTY
+  HAL_UART_Receive_IT(&huart1,rx_data,RX_PIPE_1_PAYLOAD);	// Bluetooth
 
   while (1)
   {
 	  if(get_tim9_flag() == 1){
 		  HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
+		  HAL_UART_Transmit_IT(&huart2,rx_data,RX_PIPE_1_PAYLOAD);
+		  NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,RX_PIPE_1_PAYLOAD,TRUE);
 		  clear_tim9_flag();
 	  }
 
-	  /* Si un caractere est recu */
-	  if(get_huart2_flag()){
+	  /* Si un caractere est recu en provenance du terminal */
+	  if(get_uart_flag(2)){
+		  // DEBUG
 		  if((rx_data[0]=='\n')||(rx_data[0]=='\r')) {
 			  rx_data[0]='\n';
 			  rx_data[1]='\r';
@@ -127,8 +137,16 @@ int main(void)
 			  HAL_UART_Transmit_IT(&huart2,rx_data,1);		// DEBUG
 			  NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,1,TRUE);
 		  }
+		  //
+		  clear_uart_flag(2);
 		  HAL_UART_Receive_IT(&huart2,rx_data,1);
-		  clear_huart2_flag();
+	  }
+
+	  if(get_uart_flag(1)){
+		  //HAL_UART_Transmit_IT(&huart2,rx_data,RX_PIPE_1_PAYLOAD);  // Envoi sur la console
+		  //NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,RX_PIPE_1_PAYLOAD,TRUE);
+		  clear_uart_flag(1);
+		  HAL_UART_Receive_IT(&huart1,rx_data,RX_PIPE_1_PAYLOAD);
 	  }
 
 	  // NRF24L01
@@ -138,20 +156,18 @@ int main(void)
 			  NRF24L01_Clear_TX_DS(&hspi3,NRF24L01_Status);
 		  }
 		  if(NRF24L01_Status & (1<<MAX_RT)){
-			  HAL_UART_Transmit_IT(&huart2,erreur,sizeof(erreur));	// DEBUG
-			  rx_data[0]='\n';								// DEBUG
-			  rx_data[1]='\r';								// DEBUG
-			  HAL_UART_Transmit_IT(&huart2,rx_data,2);		// DEBUG
+			  //HAL_UART_Transmit_IT(&huart2,erreur,sizeof(erreur));	// DEBUG
+			  //rx_data[0]='\n';								// DEBUG
+			  //rx_data[1]='\r';								// DEBUG
+			  //HAL_UART_Transmit_IT(&huart2,rx_data,2);		// DEBUG
 			  NRF24L01_Flush(&hspi3,TX);
 			  NRF24L01_Clear_MAX_RT(&hspi3,NRF24L01_Status);
 		  }
 		  if(NRF24L01_Status & (1<<RX_DR)){
 			  rx_data[0]=NRF24L01_Read_Data_Pipe_Number(&hspi3,NRF24L01_Status);
 			  NRF24L01_Read_RX_Payload(&hspi3,rx_data,1);
-			  HAL_UART_Transmit_IT(&huart2,rx_data,1);
+			  //HAL_UART_Transmit_IT(&huart2,rx_data,1);
 			  NRF24L01_Clear_RX_DR(&hspi3,NRF24L01_Status);
-			  //HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
-
 		  }
 		  clear_IRQ_flag();
 	  }
@@ -173,7 +189,7 @@ void SystemClock_Config(void)
   RCC_OscInitTypeDef RCC_OscInitStruct;
   RCC_ClkInitTypeDef RCC_ClkInitStruct;
 
-  __PWR_CLK_ENABLE();
+  __HAL_RCC_PWR_CLK_ENABLE();
 
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
@@ -188,7 +204,8 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLQ = 4;
   HAL_RCC_OscConfig(&RCC_OscInitStruct);
 
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_SYSCLK|RCC_CLOCKTYPE_PCLK1;
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
