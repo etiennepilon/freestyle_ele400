@@ -449,7 +449,7 @@ void NRF24l01_Initialization(SPI_HandleTypeDef* hspi, uint8_t Mode){
 	NRF24L01_Activation_Control(hspi,STANDBY);
 	NRF24L01_Config(hspi,TRUE,TRUE,TRUE,TRUE,0,POWER_DOWN,Mode);
 	NRF24L01_Enable_AA(hspi,TRUE,TRUE,FALSE,FALSE,FALSE,FALSE);
-	NRF24L01_Setup_Retransmission(hspi, WAIT_250,5);
+	NRF24L01_Setup_Retransmission(hspi, WAIT_250,1);
 	NRF24L01_Setup_Adress_Width(hspi,ADDRESS_FIELD_WIDTH);
 	NRF24L01_RF_Channel(hspi,RF_CHANNEL);
 	NRF24L01_RF_Setup(hspi,FALSE,_1MBPS,MINUS_12_DBM);

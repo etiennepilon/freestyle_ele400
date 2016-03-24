@@ -49,7 +49,7 @@ extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN Private defines */
-
+//#define UART1_BUFFER_SIZE 3
 /* USER CODE END Private defines */
 
 void MX_USART1_UART_Init(void);
@@ -58,6 +58,9 @@ void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN Prototypes */
 uint8_t get_uart_flag(uint8_t uart);
 void clear_uart_flag(uint8_t uart);
+uint8_t get_uart_error_flag(uint8_t uart);
+void clear_uart_error_flag(uint8_t uart);
+void read_buffer(uint8_t* buffer,uint8_t size);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
