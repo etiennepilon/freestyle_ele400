@@ -155,6 +155,7 @@ int main(void)
 
 	  if(get_uart_error_flag(1)){
 		  //__HAL_UART_CLEAR_OREFLAG(&huart1);
+		  HAL_UART_Transmit_IT(&huart2,"ERROR",5);
 		  HAL_UART_Receive(&huart1,rx_data,1,100);
 		  clear_uart_error_flag(1);
 	  }

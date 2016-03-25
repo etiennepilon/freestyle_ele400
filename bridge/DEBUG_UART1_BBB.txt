@@ -1,0 +1,8 @@
+for x in range(0,100):
+   if x in range(0,10):
+      ser.write("|")
+      ser.write("/")
+      ser.write(str(x))
+   if x in range(10,100):
+      ser.write("?")
+      ser.write(str(x))
