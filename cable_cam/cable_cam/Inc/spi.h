@@ -67,7 +67,7 @@ typedef union __uTelemetry
 
 typedef struct __sRX
 {
-	uint8_t torque;
+	int8_t torque;
 	uint8_t emergencyStop:1;
 	uint8_t keepAlive:1;
 	uint8_t notUse:6;

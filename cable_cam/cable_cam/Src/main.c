@@ -51,17 +51,16 @@
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
  uint32_t adcValue = 0;
- uint32_t rx_data[10];
+ uint8_t rx_data[10];
  uint8_t NRF24L01_Status;
  sRX rxStruct;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
-
+void parseRXMessages(uint8_t *rxBuffer, sRX *rxData);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -116,7 +115,9 @@ int main(void)
 //      adcValue = HAL_ADC_GetValue(&hadc1);
 //      TIM_PWM_SetPulse(&htim1,adcValue+3000);
       TIM_PWM_SetPulse(&htim1,(rxStruct.torque*30)+3000);
-	  HAL_UART_Transmit(&huart2,rx_data,3,1000);
+	  memcpy(rx_data,"{|U",3);
+	  parseRXMessages(rx_data,&rxStruct);
+	  HAL_UART_Transmit(&huart2,&rxStruct.torque,1,1000);
 	  if(get_flag_IRQ()){
 		  NRF24L01_Status= NRF24L01_Read_Status(&hspi3);
 		  //printf("IRQ\r");
@@ -124,7 +125,7 @@ int main(void)
 			  rx_data[0]=NRF24L01_Read_Data_Pipe_Number(&hspi3,NRF24L01_Status);
 			  NRF24L01_Read_RX_Payload(&hspi3,rx_data,RX_PIPE_1_PAYLOAD);
 			  HAL_UART_Transmit(&huart2,rx_data,3,1000);
-			  parseRXMessage(rx_data,&rxStruct);
+			  parseRXMessages(rx_data,&rxStruct);
 			  NRF24L01_Clear_RX_DR(&hspi3,NRF24L01_Status);
 			  HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
 		  }
@@ -186,18 +187,18 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-void parseRXMessage(uint32_t *rxBuffer, sRX *rxData)
+void parseRXMessages(uint8_t *rxBuffer, sRX *rxData)
 {
 	char *torqueHeader = "{|";
 	char *commandHeader = "";
 
 	if (!(memcmp(torqueHeader,rxBuffer,2)))
 	{
-		rxData->torque = rxBuffer[3];
+		rxData->torque = rxBuffer[2];
 	}
 	else if (!(memcmp(commandHeader,rxBuffer,2)))
 	{
-		switch ( rxBuffer[3] )
+		switch ( rxBuffer[2] )
 		{
 			case 'A':
 				rxData->emergencyStop = 1;
