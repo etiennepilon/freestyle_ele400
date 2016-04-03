@@ -62,14 +62,14 @@ void MX_GPIO_Init(void)
   __GPIOC_CLK_ENABLE();
   __GPIOH_CLK_ENABLE();
   __GPIOA_CLK_ENABLE();
-  __GPIOD_CLK_ENABLE();
   __GPIOB_CLK_ENABLE();
+  __GPIOD_CLK_ENABLE();
 
-  /*Configure GPIO pins : PCPin PCPin */
-  GPIO_InitStruct.Pin = B1_Pin|E1_Pin;
+  /*Configure GPIO pin : PtPin */
+  GPIO_InitStruct.Pin = B1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PAPin PAPin */
   GPIO_InitStruct.Pin = LD2_Pin|CE_Pin;
@@ -77,6 +77,12 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PtPin */
+  GPIO_InitStruct.Pin = E1_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(E1_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PtPin */
   GPIO_InitStruct.Pin = CSN_Pin;
@@ -87,7 +93,7 @@ void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : PtPin */
   GPIO_InitStruct.Pin = IRQ_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(IRQ_GPIO_Port, &GPIO_InitStruct);
 
@@ -114,11 +120,22 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	if (GPIO_Pin == GPIO_PIN_13)
 	{
-		htim11.Instance->CNT= 0;
+
 	}
 	else if (GPIO_Pin == GPIO_PIN_4)
 	{
-		distance = htim11.Instance->CNT;
+		if(HAL_GPIO_ReadPin(GPIOC,GPIO_Pin)==GPIO_PIN_SET)
+		{
+			__HAL_TIM_SetCounter(&htim11, 0);
+			HAL_GPIO_WritePin(GPIOA, LD2_Pin,1);
+		}
+
+		else if(HAL_GPIO_ReadPin(GPIOC,GPIO_Pin)==GPIO_PIN_RESET)
+		{
+			distance = (__HAL_TIM_GetCounter(&htim11)/75);
+			HAL_GPIO_WritePin(GPIOA, LD2_Pin,0);
+		}
+
 //		distance = 5000;
 	}
 	else if (GPIO_Pin == GPIO_PIN_7)

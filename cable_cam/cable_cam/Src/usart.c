@@ -36,8 +36,6 @@
 #include "usart.h"
 
 #include "gpio.h"
-#include "stdio.h"
-#include "string.h"
 
 /* USER CODE BEGIN 0 */
 
