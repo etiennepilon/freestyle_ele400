@@ -59,6 +59,7 @@ void MX_TIM9_Init(void);
 /* USER CODE BEGIN Prototypes */
 uint8_t get_tim9_flag();
 void clear_tim9_flag(uint8_t flag);
+void clear_keepalive_counter();
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

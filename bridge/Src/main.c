@@ -162,6 +162,7 @@ int main(void)
 		  HAL_UART_Transmit_IT(&huart2,rx_data,UART1_BUFFER_SIZE);  // Envoi sur la console
 		  NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,RX_PIPE_1_PAYLOAD,TRUE);
 		  clear_uart_flag(1);
+		  clear_keepalive_counter();
 		  //HAL_UART_Receive_IT(&huart1,rx_data,size_uart1);
 	  }
 

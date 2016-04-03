@@ -37,6 +37,7 @@
 
 /* USER CODE BEGIN 0 */
 static uint8_t flag_tim9_it;
+static uint16_t keepalive_counter;
 /* USER CODE END 0 */
 
 TIM_HandleTypeDef htim9;
@@ -101,7 +102,6 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
 /* USER CODE BEGIN 1 */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	static uint16_t i;
-	static uint16_t t;
 
 	if(i< STATUS_DELAY) i++;
 
@@ -111,10 +111,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 		i=0;
 	}
 
-	if(t < COMM_TIMEOUT) t++;
+	if(keepalive_counter < COMM_TIMEOUT) keepalive_counter++;
 	else{
 		flag_tim9_it = FLAG_COMM;
-		t=0;
+		keepalive_counter=0;
 	}
 }
 
@@ -133,7 +133,9 @@ void clear_tim9_flag(uint8_t flag){
 		flag_tim9_it = 0;
 	break;
 	}
-
+}
+void clear_keepalive_counter(){
+	keepalive_counter = 0;
 }
 /* USER CODE END 1 */
 
