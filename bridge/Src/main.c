@@ -45,7 +45,7 @@
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-
+	//uint8_t rx_data[3];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -53,7 +53,7 @@ void SystemClock_Config(void);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
-
+#define UART1_BUFFER_SIZE 3
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -65,7 +65,8 @@ int main(void)
 
   /* USER CODE BEGIN 1 */
 	//uint8_t tx_data[32];
-	uint8_t rx_data[32];
+	uint8_t rx_data[3];
+	//extern uint8_t rx_data[3];
 	//uint8_t erreur[8] = {' ','=',' ','E','C','H','E','C'};
 
 	// STM32F091 (DEBUG a L'appart)
@@ -74,7 +75,7 @@ int main(void)
 	// Bridge
 	uint64_t cable_cam_add = 0x515151;
 	uint8_t NRF24L01_Status;
-
+	//uint8_t size_uart1 = 3;
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/
@@ -107,46 +108,69 @@ int main(void)
   //HAL_UART_Transmit_IT(&huart2,tx_data,3);
 
   // Bridge
-  rx_data[0] = 'O';  // DEBUG
-  rx_data[1] = 'K';
-  rx_data[2] = ' ';
-  NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,RX_PIPE_1_PAYLOAD,TRUE); // DEBUG
-  HAL_UART_Receive_IT(&huart2,rx_data,1);   // PUTTY
-  HAL_UART_Receive_IT(&huart1,rx_data,RX_PIPE_1_PAYLOAD);	// Bluetooth
+  // DEBUG
+  //rx_data[0] = 'O';
+  //rx_data[1] = 'K';
+  //rx_data[2] = ' ';
+  // FIN DEBUG
+  //NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,RX_PIPE_1_PAYLOAD,TRUE); // DEBUG
+  HAL_UART_Receive_IT(&huart2,rx_data,1);   // PUTTY DEBUG
+  HAL_UART_Receive_IT(&huart1,rx_data,UART1_BUFFER_SIZE);	// Bluetooth
+  //HAL_UART_Receive_IT(&huart1,rx_data,2);
 
   while (1)
   {
-	  if(get_tim9_flag() == 1){
+	  if(get_tim9_flag() == FLAG_STATUS){
 		  HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
-		  HAL_UART_Transmit_IT(&huart2,rx_data,RX_PIPE_1_PAYLOAD);
-		  NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,RX_PIPE_1_PAYLOAD,TRUE);
-		  clear_tim9_flag();
+		  //HAL_UART_Transmit_IT(&huart2,rx_data,RX_PIPE_1_PAYLOAD);
+		  //NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,RX_PIPE_1_PAYLOAD,TRUE);
+		  clear_tim9_flag(FLAG_STATUS);
 	  }
 
+	  // Si aucun message n'a ete envoye pendant les 300 dernieres ms
+	  if(get_tim9_flag() == FLAG_COMM){
+		  HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
+		  rx_data[0]='}';
+		  rx_data[1]='~';
+		  rx_data[2]='K';
+		  NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,RX_PIPE_1_PAYLOAD,TRUE);
+		  clear_tim9_flag(FLAG_COMM);
+	  }
+
+	  // DEBUG
 	  /* Si un caractere est recu en provenance du terminal */
 	  if(get_uart_flag(2)){
 		  // DEBUG
 		  if((rx_data[0]=='\n')||(rx_data[0]=='\r')) {
 			  rx_data[0]='\n';
 			  rx_data[1]='\r';
-			  HAL_UART_Transmit_IT(&huart2,rx_data,2);		// DEBUG
-			  NRF24L01_Transmit(&hspi3,cable_cam_add,&rx_data[0],1,TRUE);
-			  NRF24L01_Transmit(&hspi3,cable_cam_add,&rx_data[1],1,TRUE);
+			  HAL_UART_Transmit_IT(&huart2,rx_data,2);
+			  //NRF24L01_Transmit(&hspi3,cable_cam_add,&rx_data[0],1,TRUE);
+			  //NRF24L01_Transmit(&hspi3,cable_cam_add,&rx_data[1],1,TRUE);
 		  }
 		  else {
-			  HAL_UART_Transmit_IT(&huart2,rx_data,1);		// DEBUG
-			  NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,1,TRUE);
+			  HAL_UART_Transmit_IT(&huart2,rx_data,1);
+			  //NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,1,TRUE);
 		  }
-		  //
 		  clear_uart_flag(2);
 		  HAL_UART_Receive_IT(&huart2,rx_data,1);
-	  }
+	  }// FIN DEBUG
 
 	  if(get_uart_flag(1)){
-		  //HAL_UART_Transmit_IT(&huart2,rx_data,RX_PIPE_1_PAYLOAD);  // Envoi sur la console
-		  //NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,RX_PIPE_1_PAYLOAD,TRUE);
+		  read_buffer(rx_data,3);
+		  //HAL_Delay(10);
+		  HAL_UART_Transmit_IT(&huart2,rx_data,UART1_BUFFER_SIZE);  // Envoi sur la console
+		  NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,RX_PIPE_1_PAYLOAD,TRUE);
 		  clear_uart_flag(1);
-		  HAL_UART_Receive_IT(&huart1,rx_data,RX_PIPE_1_PAYLOAD);
+		  clear_keepalive_counter();
+		  //HAL_UART_Receive_IT(&huart1,rx_data,size_uart1);
+	  }
+
+	  if(get_uart_error_flag(1)){
+		  //__HAL_UART_CLEAR_OREFLAG(&huart1);
+		  HAL_UART_Transmit_IT(&huart2,"ERROR",5);
+		  HAL_UART_Receive(&huart1,rx_data,1,100);
+		  clear_uart_error_flag(1);
 	  }
 
 	  // NRF24L01

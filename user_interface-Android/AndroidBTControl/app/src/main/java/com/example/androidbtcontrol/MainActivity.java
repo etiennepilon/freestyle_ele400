@@ -34,7 +34,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -45,12 +49,15 @@ public class MainActivity extends ActionBarActivity {
 
     ArrayList<BluetoothDevice> pairedDeviceArrayList;
 
-    TextView textInfo, textStatus;
+    TextView textInfo, textStatus, cableCamInfo;
     ListView listViewPairedDevice;
-    LinearLayout inputPane;
-    EditText inputField;
-    Button btnSend;
+    Button resetBtn, stopBtn;
+    //LinearLayout inputPane;
+    //EditText inputField;
+    //Button btnSend;
     SeekBar speedSlider;
+    // -- Keep alive
+    Timer keepAlive;
 
     ArrayAdapter<BluetoothDevice> pairedDeviceAdapter;
     private UUID myUUID;
@@ -67,12 +74,40 @@ public class MainActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        textInfo = (TextView)findViewById(R.id.info);
-        textStatus = (TextView)findViewById(R.id.status);
-        listViewPairedDevice = (ListView)findViewById(R.id.pairedlist);
+        textInfo = (TextView)findViewById(R.id.btDeviceStatus);
+        textStatus = (TextView)findViewById(R.id.btDeviceInfo);
+        cableCamInfo = (TextView)findViewById(R.id.cableCamInfo);
+        listViewPairedDevice = (ListView)findViewById(R.id.btDeviceList);
 
-        inputPane = (LinearLayout)findViewById(R.id.inputpane);
-        inputField = (EditText)findViewById(R.id.input);
+        /*
+        keepAlive = new Timer().scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {}
+        }, 0, 1000);
+        */
+        resetBtn = (Button) findViewById(R.id.resetBtn);
+        resetBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                setup();
+            }
+        });
+        stopBtn = (Button) findViewById(R.id.stopBtn);
+        stopBtn.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                if (myThreadConnected != null) {
+                    byte[] msg = messageFactory.getCommandMessage(CableCamMessageFactory.EMERGENCY_STOP).getBytes();
+                    myThreadConnected.write(msg);
+                }
+                if (speedSlider != null){
+                    speedSlider.setProgress(50);
+                }
+            }
+        });
+        //inputPane = (LinearLayout)findViewById(R.id.);
+        //inputField = (EditText)findViewById(R.id.input);
+        /*
         btnSend = (Button)findViewById(R.id.send);
         btnSend.setOnClickListener(new View.OnClickListener(){
 
@@ -83,7 +118,7 @@ public class MainActivity extends ActionBarActivity {
                     myThreadConnected.write(bytesToSend);
                 }
             }});
-
+        */
         if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH)){
             Toast.makeText(this,
                     "FEATURE_BLUETOOTH NOT support",
@@ -92,7 +127,8 @@ public class MainActivity extends ActionBarActivity {
             return;
         }
         // - Speed slider
-        speedSlider = (SeekBar)findViewById(R.id.speed_slider_id);
+        speedSlider = (SeekBar)findViewById(R.id.speedSlider);
+        speedSlider.setProgress(50);
         speedSlider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             public void onStopTrackingTouch(SeekBar bar)
             {
@@ -110,7 +146,7 @@ public class MainActivity extends ActionBarActivity {
                 //System.out.println("Value: " + paramInt);
                 //messageFactory.getSpeedMessage(paramInt);
                 if (myThreadConnected != null){
-                    byte[] msg = messageFactory.getSpeedMessageChar(paramInt).getBytes();
+                    byte[] msg = messageFactory.getTorqueMessageChar(paramInt).getBytes();
                     myThreadConnected.write(msg);
                     try {
                         Thread.sleep(200);
@@ -278,7 +314,7 @@ public class MainActivity extends ActionBarActivity {
                         textStatus.setText(msgconnected);
 
                         listViewPairedDevice.setVisibility(View.GONE);
-                        inputPane.setVisibility(View.VISIBLE);
+                        //inputPane.setVisibility(View.VISIBLE);
                     }});
 
                 startThreadConnected(bluetoothSocket);
@@ -339,11 +375,14 @@ public class MainActivity extends ActionBarActivity {
             while (true) {
                 try {
                     bytes = connectedInputStream.read(buffer);
+
+                    final String msgReceived = messageFactory.parseMessage(buffer, bytes);
+                    /*
                     String strReceived = new String(buffer, 0, bytes);
                     final String msgReceived = String.valueOf(bytes) +
                             " bytes received:\n"
                             + strReceived;
-
+                    */
                     runOnUiThread(new Runnable(){
 
                         @Override
@@ -386,23 +425,36 @@ public class MainActivity extends ActionBarActivity {
         }
     }
     private class CableCamMessageFactory{
-        // - Speed Header
+
+        public static final char EMERGENCY_STOP = 'A';
+        public static final char KEEP_ALIVE = 'K';
+
+        // - Torque Header
         //  { = 123 (ASCII Value)
         //  | = 124 (ASCII Value)
-        private final String Speed_Header = "{|";
+        private final String Torque_Header = "{|";
         // - Command Header
         //  } = 125 (ASCII Value)
         //  ~ = 126 (ASCII Value)
+        //  A = 65-> Emergency Stop
+        //  K = 75 -> Keep Alive
         private final String Command_Header = "}~";
+        // - Keep Alive Header
+        //   (ASCII Value)
+        //   (ASCII Value)
 
-        public String getSpeedMessageChar(int speed){
+        public String getTorqueMessageChar(int torque){
             //String result = Speed_Header + speed;
-            char speed_char = (char) speed;
+            char torque_char = (char) torque;
             //System.out.println(Speed_Header + speed_char);
-            return Speed_Header + speed_char;
+            return Torque_Header + torque_char;
         }
-        public String getSpeedMessageString(int speed){
-            return Speed_Header + speed;
+        public String getCommandMessage(char command){
+            return Command_Header + command;
+        }
+        public String parseMessage(byte[] b, int numberOfBytes){
+            // TODO
+            return "not parsed yet";
         }
     }
 }

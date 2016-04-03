@@ -36,8 +36,8 @@
 #include "tim.h"
 
 /* USER CODE BEGIN 0 */
-#define DELAY 1000
 static uint8_t flag_tim9_it;
+static uint16_t keepalive_counter;
 /* USER CODE END 0 */
 
 TIM_HandleTypeDef htim9;
@@ -103,19 +103,39 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	static uint16_t i;
 
-	if(i==DELAY) {
-		flag_tim9_it = 1;
+	if(i< STATUS_DELAY) i++;
+
+	//if(i==DELAY) {
+	else{
+		flag_tim9_it = FLAG_STATUS;
 		i=0;
 	}
-	i++;
+
+	if(keepalive_counter < COMM_TIMEOUT) keepalive_counter++;
+	else{
+		flag_tim9_it = FLAG_COMM;
+		keepalive_counter=0;
+	}
 }
 
 uint8_t get_tim9_flag(){
 	return flag_tim9_it;
 }
 
-void clear_tim9_flag(){
-	flag_tim9_it = 0;
+void clear_tim9_flag(uint8_t flag){
+	switch(flag){
+	case(FLAG_STATUS): flag_tim9_it = 0;
+	break;
+	case(FLAG_COMM): flag_tim9_it = 0;
+	break;
+	default:
+		flag_tim9_it = 0;
+		flag_tim9_it = 0;
+	break;
+	}
+}
+void clear_keepalive_counter(){
+	keepalive_counter = 0;
 }
 /* USER CODE END 1 */
 

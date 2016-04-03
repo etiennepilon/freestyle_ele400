@@ -38,9 +38,12 @@
 #include "gpio.h"
 
 /* USER CODE BEGIN 0 */
-#include "NRF24L01.h"
-static uint8_t huart1_flag,huart2_flag;
-extern uint8_t rx_data[32];
+//#include "NRF24L01.h"
+
+static uint8_t huart1_flag,huart1_error_flag,huart2_flag,huart2_error_flag;
+static uint8_t uart_Buffer[3];
+//extern uint8_t rx_data[3];
+//uint8_t rx_data[3];
 /* USER CODE END 0 */
 
 UART_HandleTypeDef huart1;
@@ -189,6 +192,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 
 	if(huart->Instance == USART1){
 		huart1_flag = 1;
+		//HAL_UART_Receive_IT(huart,rx_data,3);
+		HAL_UART_Receive_IT(huart,uart_Buffer,3);
 	}
 	if(huart->Instance == USART2){
 		huart2_flag = 1;
@@ -220,6 +225,51 @@ void clear_uart_flag(uint8_t uart){
 		huart1_flag = 0;
 		huart2_flag = 0;
 	break;
+	}
+}
+
+uint8_t get_uart_error_flag(uint8_t uart){
+	uint8_t flag_out;
+
+	switch(uart){
+	case(1): flag_out = huart1_error_flag;
+	break;
+	case(2): flag_out = huart2_error_flag;
+	break;
+	default: flag_out = 0;
+	break;
+	}
+
+	return flag_out;
+}
+void clear_uart_error_flag(uint8_t uart){
+	switch(uart){
+	case(1): huart1_error_flag = 0;
+	break;
+	case(2): huart2_error_flag = 0;
+	break;
+	default:
+		huart1_error_flag = 0;
+		huart2_error_flag = 0;
+	break;
+	}
+}
+
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart){
+	if(huart->Instance == USART1){
+		huart1_error_flag = 1;
+	}
+	if(huart->Instance == USART2){
+		huart2_error_flag = 1;
+	}
+}
+
+void read_buffer(uint8_t* buffer,uint8_t size){
+	uint8_t i=0;
+
+	while(i<size){
+		buffer[i]=uart_Buffer[i];
+		i++;
 	}
 }
 /* USER CODE END 1 */
