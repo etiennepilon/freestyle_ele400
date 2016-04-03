@@ -108,41 +108,53 @@ int main(void)
   //HAL_UART_Transmit_IT(&huart2,tx_data,3);
 
   // Bridge
-  rx_data[0] = 'O';  // DEBUG
-  rx_data[1] = 'K';
-  rx_data[2] = ' ';
+  // DEBUG
+  //rx_data[0] = 'O';
+  //rx_data[1] = 'K';
+  //rx_data[2] = ' ';
+  // FIN DEBUG
   //NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,RX_PIPE_1_PAYLOAD,TRUE); // DEBUG
-  HAL_UART_Receive_IT(&huart2,rx_data,1);   // PUTTY
+  HAL_UART_Receive_IT(&huart2,rx_data,1);   // PUTTY DEBUG
   HAL_UART_Receive_IT(&huart1,rx_data,UART1_BUFFER_SIZE);	// Bluetooth
   //HAL_UART_Receive_IT(&huart1,rx_data,2);
 
   while (1)
   {
-	  if(get_tim9_flag() == 1){
+	  if(get_tim9_flag() == FLAG_STATUS){
 		  HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
 		  //HAL_UART_Transmit_IT(&huart2,rx_data,RX_PIPE_1_PAYLOAD);
 		  //NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,RX_PIPE_1_PAYLOAD,TRUE);
-		  clear_tim9_flag();
+		  clear_tim9_flag(FLAG_STATUS);
 	  }
 
+	  // Si aucun message n'a ete envoye pendant les 300 dernieres ms
+	  if(get_tim9_flag() == FLAG_COMM){
+		  HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
+		  rx_data[0]='}';
+		  rx_data[1]='~';
+		  rx_data[2]='K';
+		  NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,RX_PIPE_1_PAYLOAD,TRUE);
+		  clear_tim9_flag(FLAG_COMM);
+	  }
+
+	  // DEBUG
 	  /* Si un caractere est recu en provenance du terminal */
 	  if(get_uart_flag(2)){
 		  // DEBUG
 		  if((rx_data[0]=='\n')||(rx_data[0]=='\r')) {
 			  rx_data[0]='\n';
 			  rx_data[1]='\r';
-			  HAL_UART_Transmit_IT(&huart2,rx_data,2);		// DEBUG
+			  HAL_UART_Transmit_IT(&huart2,rx_data,2);
 			  //NRF24L01_Transmit(&hspi3,cable_cam_add,&rx_data[0],1,TRUE);
 			  //NRF24L01_Transmit(&hspi3,cable_cam_add,&rx_data[1],1,TRUE);
 		  }
 		  else {
-			  HAL_UART_Transmit_IT(&huart2,rx_data,1);		// DEBUG
+			  HAL_UART_Transmit_IT(&huart2,rx_data,1);
 			  //NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,1,TRUE);
 		  }
-		  //
 		  clear_uart_flag(2);
 		  HAL_UART_Receive_IT(&huart2,rx_data,1);
-	  }
+	  }// FIN DEBUG
 
 	  if(get_uart_flag(1)){
 		  read_buffer(rx_data,3);

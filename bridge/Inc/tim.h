@@ -48,14 +48,17 @@
 extern TIM_HandleTypeDef htim9;
 
 /* USER CODE BEGIN Private defines */
-
+#define STATUS_DELAY 1000
+#define COMM_TIMEOUT 300
+#define FLAG_STATUS 1
+#define FLAG_COMM 2
 /* USER CODE END Private defines */
 
 void MX_TIM9_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 uint8_t get_tim9_flag();
-void clear_tim9_flag();
+void clear_tim9_flag(uint8_t flag);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
