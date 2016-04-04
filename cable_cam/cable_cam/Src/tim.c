@@ -38,6 +38,10 @@
 #include "gpio.h"
 
 /* USER CODE BEGIN 0 */
+#include "spi.h"
+
+extern sTelemetry telemetryStruct;
+extern sRX controlStruct;
 static int32_t rpmValue;
 /* USER CODE END 0 */
 
@@ -45,6 +49,7 @@ TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
+TIM_HandleTypeDef htim5;
 TIM_HandleTypeDef htim10;
 TIM_HandleTypeDef htim11;
 
@@ -189,6 +194,32 @@ void MX_TIM4_Init(void)
   HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig);
 
 }
+/* TIM5 init function */
+void MX_TIM5_Init(void)
+{
+  TIM_ClockConfigTypeDef sClockSourceConfig;
+  TIM_SlaveConfigTypeDef sSlaveConfig;
+  TIM_MasterConfigTypeDef sMasterConfig;
+
+  htim5.Instance = TIM5;
+  htim5.Init.Prescaler = 168;
+  htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim5.Init.Period = 65535;
+  htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV4;
+  HAL_TIM_Base_Init(&htim5);
+
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  HAL_TIM_ConfigClockSource(&htim5, &sClockSourceConfig);
+
+  sSlaveConfig.SlaveMode = TIM_SLAVEMODE_DISABLE;
+  sSlaveConfig.InputTrigger = TIM_TS_ITR2;
+  HAL_TIM_SlaveConfigSynchronization(&htim5, &sSlaveConfig);
+
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  HAL_TIMEx_MasterConfigSynchronization(&htim5, &sMasterConfig);
+
+}
 /* TIM10 init function */
 void MX_TIM10_Init(void)
 {
@@ -272,6 +303,21 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
   /* USER CODE BEGIN TIM4_MspInit 1 */
 
   /* USER CODE END TIM4_MspInit 1 */
+  }
+  else if(htim_base->Instance==TIM5)
+  {
+  /* USER CODE BEGIN TIM5_MspInit 0 */
+
+  /* USER CODE END TIM5_MspInit 0 */
+    /* Peripheral clock enable */
+    __TIM5_CLK_ENABLE();
+
+    /* Peripheral interrupt init*/
+    HAL_NVIC_SetPriority(TIM5_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(TIM5_IRQn);
+  /* USER CODE BEGIN TIM5_MspInit 1 */
+
+  /* USER CODE END TIM5_MspInit 1 */
   }
   else if(htim_base->Instance==TIM10)
   {
@@ -449,6 +495,21 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
 
   /* USER CODE END TIM4_MspDeInit 1 */
   }
+  else if(htim_base->Instance==TIM5)
+  {
+  /* USER CODE BEGIN TIM5_MspDeInit 0 */
+
+  /* USER CODE END TIM5_MspDeInit 0 */
+    /* Peripheral clock disable */
+    __TIM5_CLK_DISABLE();
+
+    /* Peripheral interrupt Deinit*/
+    HAL_NVIC_DisableIRQ(TIM5_IRQn);
+
+  /* USER CODE BEGIN TIM5_MspDeInit 1 */
+
+  /* USER CODE END TIM5_MspDeInit 1 */
+  }
   else if(htim_base->Instance==TIM10)
   {
   /* USER CODE BEGIN TIM10_MspDeInit 0 */
@@ -517,7 +578,8 @@ void TIM_Encoder_ReadRPM (int32_t *rpm,TIM_HandleTypeDef* htim)
 {
 	static uint32_t oldPosition = 0;
 	uint32_t newPosition = TIM3->CNT;
-	rpmValue = (oldPosition-newPosition)*30;
+	telemetryStruct.position = newPosition;
+	telemetryStruct.velocity = (oldPosition-newPosition)*30;
 //	printf("%ld\r",(oldPosition-newPosition)*120);
 	oldPosition = newPosition;
 }
@@ -529,7 +591,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 //		HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
 		printf("error");
 		}
-	else if (htim->Instance==TIM3) //check if the interrupt comes from TIM11
+	else if (htim->Instance==TIM5) //check if the interrupt comes from TIM11
+		{
+		HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
+		controlStruct.keepAlive = 0;
+		}
+
+	else if (htim->Instance==TIM4) //check if the interrupt comes from TIM11
 		{
 		TIM_Encoder_ReadRPM (&rpmValue,&htim4);
 		}

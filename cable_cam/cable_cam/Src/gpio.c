@@ -36,6 +36,7 @@
 #include "gpio.h"
 /* USER CODE BEGIN 0 */
 #include "tim.h"
+#include "spi.h"
 /* USER CODE END 0 */
 
 /*----------------------------------------------------------------------------*/
@@ -44,6 +45,7 @@
 /* USER CODE BEGIN 1 */
 static uint32_t distance;
 static uint8_t flagIrq;
+extern sTelemetry telemetryStruct;
 /* USER CODE END 1 */
 
 /** Configure pins as 
@@ -70,6 +72,12 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PC3 */
+  GPIO_InitStruct.Pin = GPIO_PIN_3;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PAPin PAPin */
   GPIO_InitStruct.Pin = LD2_Pin|CE_Pin;
@@ -104,6 +112,9 @@ void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(CSN_GPIO_Port, CSN_Pin, GPIO_PIN_RESET);
 
   /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI3_IRQn);
+
   HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI4_IRQn);
 
@@ -122,21 +133,28 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	{
 
 	}
-	else if (GPIO_Pin == GPIO_PIN_4)
+	else if (GPIO_Pin == GPIO_PIN_3)
 	{
 		if(HAL_GPIO_ReadPin(GPIOC,GPIO_Pin)==GPIO_PIN_SET)
 		{
 			__HAL_TIM_SetCounter(&htim11, 0);
-			HAL_GPIO_WritePin(GPIOA, LD2_Pin,1);
+//			HAL_GPIO_WritePin(GPIOA, LD2_Pin,1);
 		}
 
 		else if(HAL_GPIO_ReadPin(GPIOC,GPIO_Pin)==GPIO_PIN_RESET)
 		{
-			distance = (__HAL_TIM_GetCounter(&htim11)/75);
-			HAL_GPIO_WritePin(GPIOA, LD2_Pin,0);
+			telemetryStruct.distanceFront = (__HAL_TIM_GetCounter(&htim11)/75);
+//			HAL_GPIO_WritePin(GPIOA, LD2_Pin,0);
 		}
 
-//		distance = 5000;
+	}
+	else if (GPIO_Pin == GPIO_PIN_4)
+	{
+		if(HAL_GPIO_ReadPin(GPIOC,GPIO_Pin)==GPIO_PIN_RESET)
+		{
+			telemetryStruct.distanceBack = (__HAL_TIM_GetCounter(&htim11)/75);
+			HAL_GPIO_WritePin(GPIOA, LD2_Pin,0);
+		}
 	}
 	else if (GPIO_Pin == GPIO_PIN_7)
 	{
@@ -152,10 +170,7 @@ void clear_flag_IRQ(void)
 {
 	flagIrq = 0;
 }
-int32_t get_distance(void)
-{
-	return distance;
-}
+
 
 
 /* USER CODE END 2 */

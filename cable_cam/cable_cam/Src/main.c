@@ -97,14 +97,16 @@ int main(void)
   MX_SPI3_Init();
   MX_TIM2_Init();
   MX_TIM10_Init();
+  MX_TIM5_Init();
 
   /* USER CODE BEGIN 2 */
   HAL_TIM_Encoder_Start(&htim3,TIM3);
   HAL_TIM_PWM_Start (&htim1, TIM1);
   HAL_TIM_PWM_Start (&htim2, TIM2);
   HAL_TIM_PWM_Start (&htim10, TIM10);
-  HAL_ADC_Start(&hadc1);//
+  HAL_ADC_Start(&hadc1);
   HAL_TIM_Base_Start_IT(&htim4);
+  HAL_TIM_Base_Start_IT(&htim5);
   HAL_TIM_Base_Start_IT(&htim11);
 
   NRF24l01_Initialization(&hspi3,PRX);
@@ -122,11 +124,13 @@ int main(void)
 	  adcValue = TIM3->CNT;
 //      adcValue = HAL_ADC_GetValue(&hadc1);
 //      TIM_PWM_SetPulse(&htim1,000);
-	  n = sprintf(printBuffer,"%lu\n\r",get_distance());
+	  n = sprintf(printBuffer,"%d\n\r",telemetryStruct.distanceFront);
 	  HAL_UART_Transmit(&huart2,printBuffer,n,1000);
-      TIM_PWM_SetPulse(&htim1,(controlStruct.torque*50)+2500);
-//	  memcpy(rx_data,"{|A",3);
+	  memcpy(rx_data,"{|}",3);
 	  parseRXMessages(rx_data,&controlStruct);
+	  wallDetection(&controlStruct,&telemetryStruct);
+      TIM_PWM_SetPulse(&htim1,(controlStruct.torque*50)+2500);
+
 	  if(get_flag_IRQ()){
 		  NRF24L01_Status= NRF24L01_Read_Status(&hspi3);
 		  //printf("IRQ\r");
@@ -135,7 +139,6 @@ int main(void)
 			  NRF24L01_Read_RX_Payload(&hspi3,rx_data,RX_PIPE_1_PAYLOAD);
 			  HAL_UART_Transmit(&huart2,rx_data,3,1000);			  
 			  parseRXMessages(rx_data,&controlStruct);
-			  
 			  NRF24L01_Clear_RX_DR(&hspi3,NRF24L01_Status);
 			  HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
 		  }
@@ -199,6 +202,8 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 void parseRXMessages(uint8_t *rxBuffer, sRX *rxData)
 {
+	__HAL_TIM_SetCounter(&htim5, 0);//reset keepalive counter
+
 	char *torqueHeader = "{|";
 	char *commandHeader = "}~";
 
@@ -227,11 +232,11 @@ void wallDetection(sRX *control,sTelemetry *telemetry)
 {
 	if (telemetry->distanceFront <300)
 	{
-		control->torque = control->torque/300*telemetry->distanceFront;
+		control->torque = (float)control->torque/300*telemetry->distanceFront;
 	}
-	if (telemetry->distanceBack <300)
+	else if (telemetry->distanceBack <300)
 	{
-		control->torque = control->torque/300*telemetry->distanceBack;
+		control->torque = (float)control->torque/300*telemetry->distanceBack;
 	}
 }
 /* USER CODE END 4 */
