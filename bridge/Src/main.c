@@ -45,7 +45,7 @@
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-	//uint8_t rx_data[3];
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -54,6 +54,10 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
 #define UART1_BUFFER_SIZE 3
+#define CABLE_CAM_PAYLOAD 3
+#define TELEMETRIE_RX 1
+#define TELEMETRIE_WAIT 2
+#define TELEMETRIE_DEMANDE 3
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -64,10 +68,9 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-	//uint8_t tx_data[32];
 	uint8_t rx_data[3];
-	//extern uint8_t rx_data[3];
-	//uint8_t erreur[8] = {' ','=',' ','E','C','H','E','C'};
+	uint8_t telemetrie_data[RX_PIPE_1_PAYLOAD];
+	uint8_t flag_telemetrie;
 
 	// STM32F091 (DEBUG a L'appart)
 	//uint64_t cable_cam_add = 0x010203;
@@ -75,7 +78,7 @@ int main(void)
 	// Bridge
 	uint64_t cable_cam_add = 0x515151;
 	uint8_t NRF24L01_Status;
-	//uint8_t size_uart1 = 3;
+
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/
@@ -95,8 +98,8 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
   // Bridge
-  NRF24l01_Initialization(&hspi3,PTX);
-
+  //NRF24l01_Initialization(&hspi3,PTX);
+  NRF24l01_Initialization(&hspi3,PRX);
   // Cable Cam
   //NRF24l01_Initialization(&hspi3,PRX);
 
@@ -113,32 +116,52 @@ int main(void)
   //rx_data[1] = 'K';
   //rx_data[2] = ' ';
   // FIN DEBUG
-  //NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,RX_PIPE_1_PAYLOAD,TRUE); // DEBUG
+  //NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,CABLE_CAM_PAYLOAD,TRUE); // DEBUG
   HAL_UART_Receive_IT(&huart2,rx_data,1);   // PUTTY DEBUG
   HAL_UART_Receive_IT(&huart1,rx_data,UART1_BUFFER_SIZE);	// Bluetooth
   //HAL_UART_Receive_IT(&huart1,rx_data,2);
 
+  NRF24L01_Status = NRF24L01_Read_Status(&hspi3);
+  NRF24L01_Flush(&hspi3,TX);
+  NRF24L01_Flush(&hspi3,RX);
+  NRF24L01_Clear_RX_DR(&hspi3,NRF24L01_Status);
+  NRF24L01_Clear_MAX_RT(&hspi3,NRF24L01_Status);
+  NRF24L01_Clear_TX_DS(&hspi3,NRF24L01_Status);
+
   while (1)
   {
+	  // Flash LED a chaque seconde
+
 	  if(get_tim9_flag() == FLAG_STATUS){
 		  HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
-		  //HAL_UART_Transmit_IT(&huart2,rx_data,RX_PIPE_1_PAYLOAD);
-		  //NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,RX_PIPE_1_PAYLOAD,TRUE);
+		  rx_data[0]='}';
+		  rx_data[1]='~';
+		  rx_data[2]='T';
+		  //HAL_UART_Transmit_IT(&huart2,rx_data,CABLE_CAM_PAYLOAD);
+		  NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,CABLE_CAM_PAYLOAD,TRUE);
+		  flag_telemetrie = TELEMETRIE_DEMANDE;
 		  clear_tim9_flag(FLAG_STATUS);
 	  }
 
 	  // Si aucun message n'a ete envoye pendant les 300 dernieres ms
 	  if(get_tim9_flag() == FLAG_COMM){
-		  HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
+		  //HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
+		  if((flag_telemetrie == TELEMETRIE_WAIT)||(flag_telemetrie == TELEMETRIE_DEMANDE)){
+			  NRF24L01_Mode(&hspi3,PTX);
+			  flag_telemetrie = 0;
+			  HAL_UART_Transmit_IT(&huart2,"W",1);
+		  }
+
+		  HAL_Delay(1);
 		  rx_data[0]='}';
 		  rx_data[1]='~';
 		  rx_data[2]='K';
-		  NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,RX_PIPE_1_PAYLOAD,TRUE);
+		  NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,CABLE_CAM_PAYLOAD,TRUE);
 		  clear_tim9_flag(FLAG_COMM);
 	  }
 
 	  // DEBUG
-	  /* Si un caractere est recu en provenance du terminal */
+	  // Si un caractere est recu en provenance du terminal
 	  if(get_uart_flag(2)){
 		  // DEBUG
 		  if((rx_data[0]=='\n')||(rx_data[0]=='\r')) {
@@ -160,7 +183,7 @@ int main(void)
 		  read_buffer(rx_data,3);
 		  //HAL_Delay(10);
 		  HAL_UART_Transmit_IT(&huart2,rx_data,UART1_BUFFER_SIZE);  // Envoi sur la console
-		  NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,RX_PIPE_1_PAYLOAD,TRUE);
+		  NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,CABLE_CAM_PAYLOAD,TRUE);
 		  clear_uart_flag(1);
 		  clear_keepalive_counter();
 		  //HAL_UART_Receive_IT(&huart1,rx_data,size_uart1);
@@ -168,32 +191,66 @@ int main(void)
 
 	  if(get_uart_error_flag(1)){
 		  //__HAL_UART_CLEAR_OREFLAG(&huart1);
-		  HAL_UART_Transmit_IT(&huart2,"ERROR",5);
+		  //HAL_UART_Transmit_IT(&huart2,"ERROR",5);
 		  HAL_UART_Receive(&huart1,rx_data,1,100);
 		  clear_uart_error_flag(1);
 	  }
 
+	  NRF24L01_Status = NRF24L01_Read_Status(&hspi3);
 	  // NRF24L01
 	  if(get_IRQ_flag()){
 		  NRF24L01_Status = NRF24L01_Read_Status(&hspi3);
+
 		  if(NRF24L01_Status & (1<<TX_DS)){
 			  NRF24L01_Clear_TX_DS(&hspi3,NRF24L01_Status);
+			  HAL_UART_Transmit_IT(&huart2,"T",1);
+
+			  if(flag_telemetrie == TELEMETRIE_DEMANDE){
+				  NRF24L01_Mode(&hspi3,PRX);
+				  clear_keepalive_counter();
+				  flag_telemetrie = TELEMETRIE_WAIT;
+			  }
 		  }
 		  if(NRF24L01_Status & (1<<MAX_RT)){
-			  //HAL_UART_Transmit_IT(&huart2,erreur,sizeof(erreur));	// DEBUG
+			  HAL_UART_Transmit_IT(&huart2,"E",1);	// DEBUG
 			  //rx_data[0]='\n';								// DEBUG
 			  //rx_data[1]='\r';								// DEBUG
 			  //HAL_UART_Transmit_IT(&huart2,rx_data,2);		// DEBUG
 			  NRF24L01_Flush(&hspi3,TX);
 			  NRF24L01_Clear_MAX_RT(&hspi3,NRF24L01_Status);
 		  }
+
 		  if(NRF24L01_Status & (1<<RX_DR)){
-			  rx_data[0]=NRF24L01_Read_Data_Pipe_Number(&hspi3,NRF24L01_Status);
-			  NRF24L01_Read_RX_Payload(&hspi3,rx_data,1);
-			  //HAL_UART_Transmit_IT(&huart2,rx_data,1);
+			  telemetrie_data[0]=NRF24L01_Read_Data_Pipe_Number(&hspi3,NRF24L01_Status);
+			  NRF24L01_Read_RX_Payload(&hspi3,telemetrie_data,RX_PIPE_1_PAYLOAD);
 			  NRF24L01_Clear_RX_DR(&hspi3,NRF24L01_Status);
+			  flag_telemetrie = TELEMETRIE_RX;
+
+			  clear_keepalive_counter();
+
+			  NRF24L01_Activation_Control(&hspi3,STANDBY);
+			  NRF24L01_Mode(&hspi3,PTX);
+			  NRF24L01_Flush(&hspi3,TX);
+			  HAL_UART_Transmit_IT(&huart2,"R",1);
+			  NRF24L01_Flush(&hspi3,RX);
 		  }
+
+		  /*
+		  rx_data[0]=NRF24L01_Read_Data_Pipe_Number(&hspi3,NRF24L01_Status);
+		  if((rx_data[0]>>1)==1){
+			  NRF24L01_Status =  NRF24L01_Status | (1<<RX_DR);
+		  }
+		  */
 		  clear_IRQ_flag();
+	  }
+
+	  if(flag_telemetrie == TELEMETRIE_RX){
+		  flag_telemetrie = 0;
+		  //HAL_UART_Transmit_IT(&huart2,telemetrie_data,RX_PIPE_1_PAYLOAD);
+		  telemetrie_data[0]='\n';
+		  telemetrie_data[1]='\r';
+		  //HAL_UART_Transmit_IT(&huart2,telemetrie_data,2);
+
 	  }
 
   /* USER CODE END WHILE */

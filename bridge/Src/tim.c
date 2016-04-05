@@ -114,7 +114,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if(keepalive_counter < COMM_TIMEOUT) keepalive_counter++;
 	else{
 		flag_tim9_it = FLAG_COMM;
-		keepalive_counter=0;
+		keepalive_counter = 0;
 	}
 }
 
