@@ -55,6 +55,7 @@ void MX_GPIO_Init(void);
 /* USER CODE BEGIN Prototypes */
 uint8_t get_flag_IRQ();
 void clear_flag_IRQ();
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

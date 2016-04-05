@@ -39,10 +39,16 @@
 
 /* USER CODE BEGIN 0 */
 #include "spi.h"
+#include "stdio.h"
+#include "string.h"
+#include "usart.h"
 
-extern sTelemetry telemetryStruct;
+extern uTelemetry utelemetry;
 extern sRX controlStruct;
 static int32_t rpmValue;
+static uint8_t fSendTelemetry;
+extern uint8_t printBuffer[64];
+extern uint8_t n;
 /* USER CODE END 0 */
 
 TIM_HandleTypeDef htim1;
@@ -176,7 +182,7 @@ void MX_TIM4_Init(void)
   TIM_MasterConfigTypeDef sMasterConfig;
 
   htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 80;
+  htim4.Init.Prescaler = 1280;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim4.Init.Period = 65535;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV4;
@@ -202,7 +208,7 @@ void MX_TIM5_Init(void)
   TIM_MasterConfigTypeDef sMasterConfig;
 
   htim5.Instance = TIM5;
-  htim5.Init.Prescaler = 168;
+  htim5.Init.Prescaler = 640;
   htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim5.Init.Period = 65535;
   htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV4;
@@ -578,8 +584,8 @@ void TIM_Encoder_ReadRPM (int32_t *rpm,TIM_HandleTypeDef* htim)
 {
 	static uint32_t oldPosition = 0;
 	uint32_t newPosition = TIM3->CNT;
-	telemetryStruct.position = newPosition;
-	telemetryStruct.velocity = (oldPosition-newPosition)*30;
+	utelemetry.telemetry.position = newPosition;
+	utelemetry.telemetry.velocity = (oldPosition-newPosition)*30;
 //	printf("%ld\r",(oldPosition-newPosition)*120);
 	oldPosition = newPosition;
 }
@@ -595,17 +601,29 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		{
 		HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
 		controlStruct.keepAlive = 0;
+		n = sprintf(printBuffer,"fuck\n\r");
+		HAL_UART_Transmit(&huart2,printBuffer,n,1000);
 		}
 
 	else if (htim->Instance==TIM4) //check if the interrupt comes from TIM11
 		{
 		TIM_Encoder_ReadRPM (&rpmValue,&htim4);
+		fSendTelemetry = 1;
 		}
 }
 
 int32_t get_rpm(void)
 {
 	return rpmValue;
+}
+
+uint8_t get_flag_telem(void)
+{
+	return fSendTelemetry;
+}
+void clear_flag_telem(void)
+{
+	fSendTelemetry = 0;
 }
 /* USER CODE END 1 */
 

@@ -70,6 +70,7 @@ typedef struct __sRX
 	int8_t torque;
 	uint8_t emergencyStop:1;
 	uint8_t keepAlive:1;
+	uint8_t requestTelem:1;
 	uint8_t notUse:6;
 }sRX;
 

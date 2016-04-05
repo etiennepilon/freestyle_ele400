@@ -46,6 +46,7 @@
 static uint32_t distance;
 static uint8_t flagIrq;
 extern sTelemetry telemetryStruct;
+extern uTelemetry utelemetry;
 /* USER CODE END 1 */
 
 /** Configure pins as 
@@ -101,7 +102,7 @@ void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : PtPin */
   GPIO_InitStruct.Pin = IRQ_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(IRQ_GPIO_Port, &GPIO_InitStruct);
 
@@ -143,7 +144,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 		else if(HAL_GPIO_ReadPin(GPIOC,GPIO_Pin)==GPIO_PIN_RESET)
 		{
-			telemetryStruct.distanceFront = (__HAL_TIM_GetCounter(&htim11)/75);
+			utelemetry.telemetry.distanceFront = (__HAL_TIM_GetCounter(&htim11)/75);
 //			HAL_GPIO_WritePin(GPIOA, LD2_Pin,0);
 		}
 
@@ -152,8 +153,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	{
 		if(HAL_GPIO_ReadPin(GPIOC,GPIO_Pin)==GPIO_PIN_RESET)
 		{
-			telemetryStruct.distanceBack = (__HAL_TIM_GetCounter(&htim11)/75);
-			HAL_GPIO_WritePin(GPIOA, LD2_Pin,0);
+			utelemetry.telemetry.distanceBack = (__HAL_TIM_GetCounter(&htim11)/75);
+//			HAL_GPIO_WritePin(GPIOA, LD2_Pin,0);
 		}
 	}
 	else if (GPIO_Pin == GPIO_PIN_7)

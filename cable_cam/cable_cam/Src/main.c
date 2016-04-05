@@ -52,6 +52,7 @@
  uint8_t rx_data[10];
  uint8_t NRF24L01_Status;
  sRX controlStruct;
+ uTelemetry utelemetry;
  sTelemetry telemetryStruct;
 
  uint8_t printBuffer[64];
@@ -121,26 +122,51 @@ int main(void)
 
   while (1)
   {
+//	  n = sprintf(printBuffer,"a\n\r");
+//	  HAL_UART_Transmit(&huart2,printBuffer,n,1000);
 	  adcValue = TIM3->CNT;
 //      adcValue = HAL_ADC_GetValue(&hadc1);
 //      TIM_PWM_SetPulse(&htim1,000);
-	  n = sprintf(printBuffer,"%d\n\r",telemetryStruct.distanceFront);
-	  HAL_UART_Transmit(&huart2,printBuffer,n,1000);
+//	  n = sprintf(printBuffer,"%d, %d\n\r",utelemetry.telemetry.distanceFront,utelemetry.telemetry.distanceBack);
+//	  HAL_UART_Transmit(&huart2,printBuffer,n,1000);
 	  memcpy(rx_data,"{|}",3);
-	  parseRXMessages(rx_data,&controlStruct);
-	  wallDetection(&controlStruct,&telemetryStruct);
-      TIM_PWM_SetPulse(&htim1,(controlStruct.torque*50)+2500);
-
-	  if(get_flag_IRQ()){
+//	  parseRXMessages(rx_data,&controlStruct);
+//	  wallDetection(&controlStruct,&telemetryStruct);
+//      TIM_PWM_SetPulse(&htim1,(controlStruct.torque*50)+2500);
+      if (controlStruct.requestTelem == 1)
+      {
+    	  HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
+    	  NRF24L01_Mode(&hspi3,PTX);
+    	  HAL_Delay(10);
+    	  NRF24L01_Transmit(&hspi3,0x555555,&utelemetry.aTelemetry,9,TRUE);
+		  clear_flag_IRQ();
+    	  NRF24L01_Mode(&hspi3,PRX);
+    	  controlStruct.requestTelem = 0;
+    	  n = sprintf(printBuffer,"value sent\n\r");
+    	  HAL_UART_Transmit(&huart2,printBuffer,n,1000);
+      }
+	  if(get_flag_IRQ()||((HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_7)==GPIO_PIN_RESET))){
+		  __HAL_TIM_SetCounter(&htim5, 0);//reset keepalive counter
 		  NRF24L01_Status= NRF24L01_Read_Status(&hspi3);
 		  //printf("IRQ\r");
+		  if((NRF24L01_Status >> 1)==1){
+			  NRF24L01_Flush(&hspi3,RX);
+		  }
 		  if(NRF24L01_Status & (1<<RX_DR)){
 			  rx_data[0]=NRF24L01_Read_Data_Pipe_Number(&hspi3,NRF24L01_Status);
 			  NRF24L01_Read_RX_Payload(&hspi3,rx_data,RX_PIPE_1_PAYLOAD);
 			  HAL_UART_Transmit(&huart2,rx_data,3,1000);			  
 			  parseRXMessages(rx_data,&controlStruct);
 			  NRF24L01_Clear_RX_DR(&hspi3,NRF24L01_Status);
-			  HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
+//			  HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
+		  }
+		  if(NRF24L01_Status & (1<<TX_DS)){
+			  NRF24L01_Flush(&hspi3,TX);
+			  NRF24L01_Clear_TX_DS(&hspi3,NRF24L01_Status);
+		  }
+		  if(NRF24L01_Status & (1<<MAX_RT)){
+			  NRF24L01_Flush(&hspi3,TX);
+			  NRF24L01_Clear_MAX_RT(&hspi3,NRF24L01_Status);
 		  }
 		  clear_flag_IRQ();
 	  }
@@ -221,8 +247,12 @@ void parseRXMessages(uint8_t *rxBuffer, sRX *rxData)
 			case 'K':
 				rxData->keepAlive = 1;
 			  break;
+			case 'T':
+				rxData->requestTelem = 1;
+			  break;
 			default:
-				printf("error\r");
+		    	  n = sprintf(printBuffer,"invalid rxData\n\r");
+		    	  HAL_UART_Transmit(&huart2,printBuffer,n,1000);
 			  break;
 		}
 	}
@@ -230,13 +260,13 @@ void parseRXMessages(uint8_t *rxBuffer, sRX *rxData)
 
 void wallDetection(sRX *control,sTelemetry *telemetry)
 {
-	if (telemetry->distanceFront <300)
+	if (telemetry->distanceFront <100)
 	{
-		control->torque = (float)control->torque/300*telemetry->distanceFront;
+		control->torque = (float)control->torque/100*telemetry->distanceFront;
 	}
-	else if (telemetry->distanceBack <300)
+	else if (telemetry->distanceBack <100)
 	{
-		control->torque = (float)control->torque/300*telemetry->distanceBack;
+		control->torque = (float)control->torque/100*telemetry->distanceBack;
 	}
 }
 /* USER CODE END 4 */
