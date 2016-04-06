@@ -30,8 +30,9 @@
         android:layout_below="@+id/btDeviceList"
         android:layout_alignLeft="@+id/btDeviceList"
         android:layout_alignStart="@+id/btDeviceList"
-        android:layout_marginTop="30dp"
-        android:layout_marginLeft="0dp" />
+        android:layout_marginTop="180dp"
+        android:layout_marginLeft="0dp"
+        android:layout_alignParentTop="true" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -42,7 +43,7 @@
         android:layout_below="@+id/btDeviceStatus"
         android:layout_alignLeft="@+id/btDeviceStatus"
         android:layout_alignStart="@+id/btDeviceStatus"
-        android:layout_marginTop="40dp"
+        android:layout_marginTop="80dp"
         android:layout_alignRight="@+id/btDeviceList"
         android:layout_alignEnd="@+id/btDeviceList"
         android:textColor="#25771f" />
@@ -52,12 +53,14 @@
         android:layout_height="wrap_content"
         android:text="Reset"
         android:id="@+id/resetBtn"
-        android:layout_marginRight="58dp"
-        android:layout_marginEnd="58dp"
-        android:layout_marginBottom="33dp"
         android:layout_alignBottom="@+id/btDeviceList"
         android:layout_alignRight="@+id/btDeviceStatus"
-        android:layout_alignEnd="@+id/btDeviceStatus" />
+        android:layout_alignEnd="@+id/btDeviceStatus"
+        android:layout_alignParentTop="true"
+        android:layout_marginRight="30dp"
+        android:layout_alignParentStart="false"
+        android:layout_marginTop="120dp"
+        android:layout_alignParentLeft="false" />
 
     <Button
         android:layout_width="wrap_content"
