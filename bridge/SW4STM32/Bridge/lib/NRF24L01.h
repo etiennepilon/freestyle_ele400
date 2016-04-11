@@ -8,7 +8,7 @@
 // 			 Rx Adresse
 
 // Bridge
-#define ADRESSE_PIPE_1_RX 0x555555
+#define ADRESSE_PIPE_1_RX 0x385338
 // Cable Cam
 //#define ADRESSE_PIPE_1_RX 0x515151
 
@@ -235,7 +235,7 @@
 
 #define TX_PAUSE	1					//	Le temps que CE est a un niveau haut pour indiquer au NRF24L01 que nous voulons transmettre. Delais en ms.
 
-
+#define SIZE_BUFF_NRF_REGISTER 2
 /* USER CODE END Private defines */
 
 /* USER CODE BEGIN Prototypes */

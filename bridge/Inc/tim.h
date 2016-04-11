@@ -48,7 +48,7 @@
 extern TIM_HandleTypeDef htim9;
 
 /* USER CODE BEGIN Private defines */
-#define STATUS_DELAY 1000
+#define STATUS_DELAY 500
 #define COMM_TIMEOUT 300
 #define FLAG_STATUS 1
 #define FLAG_COMM 2

@@ -39,41 +39,39 @@ void NRF24L01_Reset_CSN(void){
 
 uint8_t NRF24L01_Read_Status(SPI_HandleTypeDef* hspi)
 {
-	uint8_t Rx_Data[1];
-	uint8_t Commande[1] = {DUMMY_NRF24L01};
+	uint8_t Rx_Data;
+	uint8_t Commande = {DUMMY_NRF24L01};
 
 	NRF24L01_Reset_CSN();
-	HAL_Status_NRF24L01 = HAL_SPI_TransmitReceive(hspi, Commande, Rx_Data, 1,SPI_TIMEOUT);
+	HAL_Status_NRF24L01 = HAL_SPI_TransmitReceive(hspi, &Commande, &Rx_Data, 1,SPI_TIMEOUT);
 	NRF24L01_Set_CSN();
 
-	return Rx_Data[0];
+	return Rx_Data;
 }
 
 uint8_t NRF24L01_Read_Register(SPI_HandleTypeDef* hspi,uint8_t Registre){
-	uint8_t size = 2;
-	uint8_t Rx_Data[size];
-	uint8_t Tx_Data[size];
+	uint8_t Rx_Data[SIZE_BUFF_NRF_REGISTER];
+	uint8_t Tx_Data[SIZE_BUFF_NRF_REGISTER];
 
 	Tx_Data[0] = (Registre & READ_REGISTER);;
 	Tx_Data[1] = DUMMY_NRF24L01;
 	NRF24L01_Reset_CSN();
 	HAL_Delay(CSN_DELAY);
-	HAL_Status_NRF24L01 = HAL_SPI_TransmitReceive(hspi, Tx_Data, Rx_Data, size,SPI_TIMEOUT);
+	HAL_Status_NRF24L01 = HAL_SPI_TransmitReceive(hspi, Tx_Data, Rx_Data,SIZE_BUFF_NRF_REGISTER,SPI_TIMEOUT);
 	NRF24L01_Set_CSN();
 
 	return Rx_Data[1];
 }
 
 void NRF24l01_Write_Register(SPI_HandleTypeDef* hspi, uint8_t Registre, uint8_t Data){
-	uint8_t size = 2;
-	uint8_t Rx_Data[size];
-	uint8_t Tx_Data[size];
+	uint8_t Rx_Data[SIZE_BUFF_NRF_REGISTER];
+	uint8_t Tx_Data[SIZE_BUFF_NRF_REGISTER];
 
 	Tx_Data[0]= ((Registre & (~(((1<<7) | (1<<6)))))|(1<<5));
 	Tx_Data[1]= Data;
 	NRF24L01_Reset_CSN();
 	HAL_Delay(CSN_DELAY);
-	HAL_Status_NRF24L01 = HAL_SPI_TransmitReceive(hspi, Tx_Data, Rx_Data,size,SPI_TIMEOUT);
+	HAL_Status_NRF24L01 = HAL_SPI_TransmitReceive(hspi, Tx_Data, Rx_Data,SIZE_BUFF_NRF_REGISTER,SPI_TIMEOUT);
 	NRF24L01_Set_CSN();
 }
 
@@ -258,10 +256,10 @@ void NRF24L01_Write_RX_Address(SPI_HandleTypeDef* hspi, uint64_t RX_Address, uin
 
 void NRF24L01_Read_Data(SPI_HandleTypeDef* hspi, uint8_t Registre, uint8_t * Rx_Data, uint8_t Size){
 	uint8_t	Index;
-	uint8_t Tx_Data[Size];
-	uint8_t Commande[1];
+	uint8_t Tx_Data[Size];  // SPI buffer de 32 bytes
+	uint8_t Commande;
 
-	Commande[0] = (Registre & READ_REGISTER);
+	Commande = (Registre & READ_REGISTER);
 
 	Index = 0;
 	while ((Index < Size))
@@ -272,8 +270,8 @@ void NRF24L01_Read_Data(SPI_HandleTypeDef* hspi, uint8_t Registre, uint8_t * Rx_
 
 	NRF24L01_Reset_CSN();
 	HAL_Delay(CSN_DELAY);
-	HAL_Status_NRF24L01 = HAL_SPI_TransmitReceive(hspi, Commande, Rx_Data,1,SPI_TIMEOUT);
-	HAL_Status_NRF24L01 = HAL_SPI_TransmitReceive(hspi, Tx_Data, Rx_Data,Size,SPI_TIMEOUT);
+	HAL_Status_NRF24L01 = HAL_SPI_TransmitReceive(hspi, &Commande, Rx_Data,1,SPI_TIMEOUT);
+	HAL_Status_NRF24L01 = HAL_SPI_TransmitReceive(hspi, &Tx_Data, Rx_Data,Size,SPI_TIMEOUT);
 	NRF24L01_Set_CSN();
 }
 
@@ -323,19 +321,19 @@ void NRF24L01_Write_Payload_Width(SPI_HandleTypeDef* hspi, uint8_t Width, uint8_
 }
 
 void NRF24L01_Write_TX_Payload(SPI_HandleTypeDef* hspi, uint8_t* Tx_Data, uint8_t Size){
-	uint8_t Rx_Data[Size];
-	uint8_t Commande[1] = {W_TX_PAYLOAD};
+	uint8_t Rx_Data[Size];   // mettre buffer statique
+	uint8_t Commande = {W_TX_PAYLOAD};
 
 	NRF24L01_Reset_CSN();
 	HAL_Delay(CSN_DELAY);
-	HAL_Status_NRF24L01 = HAL_SPI_TransmitReceive(hspi, Commande, Rx_Data,1,SPI_TIMEOUT);
+	HAL_Status_NRF24L01 = HAL_SPI_TransmitReceive(hspi, &Commande, Rx_Data,1,SPI_TIMEOUT);
 	HAL_Status_NRF24L01 = HAL_SPI_TransmitReceive(hspi, Tx_Data, Rx_Data,Size,SPI_TIMEOUT);
 	NRF24L01_Set_CSN();
 }
 
 uint8_t NRF24L01_Read_RX_Payload_Width(SPI_HandleTypeDef* hspi){
-	uint8_t Tx_data[2] = {R_RX_PL_WIDTH,DUMMY_NRF24L01};
-	uint8_t Rx_data[2];
+	uint8_t Tx_data[SIZE_BUFF_NRF_REGISTER] = {R_RX_PL_WIDTH,DUMMY_NRF24L01};
+	uint8_t Rx_data[SIZE_BUFF_NRF_REGISTER];
 	NRF24L01_Reset_CSN();
 	HAL_Delay(CSN_DELAY);
 	HAL_Status_NRF24L01 = HAL_SPI_TransmitReceive(hspi, Tx_data, Rx_data,2,SPI_TIMEOUT);
@@ -345,10 +343,10 @@ uint8_t NRF24L01_Read_RX_Payload_Width(SPI_HandleTypeDef* hspi){
 }
 
 void NRF24L01_Read_RX_Payload(SPI_HandleTypeDef* hspi, uint8_t* Rx_Data, uint8_t Size){
-	uint8_t Tx_Data[Size];
-	uint8_t Commande[0];
+	uint8_t Tx_Data[Size];  // Mauvaise pratique.   Mettre ce buffer TX_SPI  en static. Mettre 32 bytes (max pour le NRF)
+	uint8_t Commande;
 
-	Commande[0] = R_RX_PAYLOAD;
+	Commande = R_RX_PAYLOAD;
 
 	uint8_t i =0;
 	while(i<Size){
@@ -357,36 +355,36 @@ void NRF24L01_Read_RX_Payload(SPI_HandleTypeDef* hspi, uint8_t* Rx_Data, uint8_t
 	}
 	NRF24L01_Reset_CSN();
 	HAL_Delay(CSN_DELAY);
-	HAL_Status_NRF24L01 = HAL_SPI_TransmitReceive(hspi, Commande, Rx_Data,1,SPI_TIMEOUT);
+	HAL_Status_NRF24L01 = HAL_SPI_TransmitReceive(hspi, &Commande, Rx_Data,1,SPI_TIMEOUT);
 	HAL_Status_NRF24L01 = HAL_SPI_TransmitReceive(hspi, Tx_Data, Rx_Data,Size,SPI_TIMEOUT);
 	NRF24L01_Set_CSN();
 }
 
 void NRF24L01_Reuse_Tx_Payload(SPI_HandleTypeDef* hspi){
-	uint8_t Commande[1]={REUSE_TX_PL};
-	uint8_t Rx_Data[1];
+	uint8_t Commande =REUSE_TX_PL;
+	uint8_t Rx_Data;
 
 	NRF24L01_Reset_CSN();
 	HAL_Delay(CSN_DELAY);
-	HAL_Status_NRF24L01 = HAL_SPI_TransmitReceive(hspi, Commande, Rx_Data,1,SPI_TIMEOUT);
+	HAL_Status_NRF24L01 = HAL_SPI_TransmitReceive(hspi,&Commande,&Rx_Data,1,SPI_TIMEOUT);
 	NRF24L01_Set_CSN();
 }
 
 void NRF24L01_Flush(SPI_HandleTypeDef* hspi, uint8_t Payload){
-	uint8_t Commande[1];
-	uint8_t Rx_Data[1];
+	uint8_t Commande;
+	uint8_t Rx_Data;
 
 	switch (Payload)
 	{
-	case(RX):	Commande[0] = FLUSH_RX;
+	case(RX):	Commande = FLUSH_RX;
 		break;
-	case(TX):	Commande[0] = FLUSH_TX;
+	case(TX):	Commande = FLUSH_TX;
 		break;
 	}
 
 	NRF24L01_Reset_CSN();
 	HAL_Delay(CSN_DELAY);
-	HAL_Status_NRF24L01 = HAL_SPI_TransmitReceive(hspi, Commande, Rx_Data,1,SPI_TIMEOUT);
+	HAL_Status_NRF24L01 = HAL_SPI_TransmitReceive(hspi, &Commande, &Rx_Data,1,SPI_TIMEOUT);
 	NRF24L01_Set_CSN();
 }
 
@@ -449,7 +447,7 @@ void NRF24l01_Initialization(SPI_HandleTypeDef* hspi, uint8_t Mode){
 	NRF24L01_Activation_Control(hspi,STANDBY);
 	NRF24L01_Config(hspi,TRUE,TRUE,TRUE,TRUE,0,POWER_DOWN,Mode);
 	NRF24L01_Enable_AA(hspi,TRUE,TRUE,FALSE,FALSE,FALSE,FALSE);
-	NRF24L01_Setup_Retransmission(hspi, WAIT_250,5);
+	NRF24L01_Setup_Retransmission(hspi, WAIT_750,5);
 	NRF24L01_Setup_Adress_Width(hspi,ADDRESS_FIELD_WIDTH);
 	NRF24L01_RF_Channel(hspi,RF_CHANNEL);
 	NRF24L01_RF_Setup(hspi,FALSE,_1MBPS,MINUS_6_DBM);

@@ -71,13 +71,16 @@ int main(void)
 	uint8_t rx_data[3];
 	uint8_t telemetrie_data[RX_PIPE_1_PAYLOAD];
 	uint8_t flag_telemetrie;
+	uint8_t IRQ_pin_state;
+	uint8_t pipe_nb;
+	uint8_t comm_status;
 
 	// STM32F091 (DEBUG a L'appart)
 	//uint64_t cable_cam_add = 0x010203;
 
 	// Bridge
 	uint64_t cable_cam_add = 0x515151;
-	uint8_t NRF24L01_Status;
+	volatile uint8_t NRF24L01_Status;
 
   /* USER CODE END 1 */
 
@@ -149,13 +152,19 @@ int main(void)
 		  if((flag_telemetrie == TELEMETRIE_WAIT)||(flag_telemetrie == TELEMETRIE_DEMANDE)){
 			  NRF24L01_Mode(&hspi3,PTX);
 			  flag_telemetrie = 0;
-			  HAL_UART_Transmit_IT(&huart2,"W",1);
+			  comm_status = 'W';
+			  //HAL_UART_Transmit_IT(&huart2,&comm_status,1);
 		  }
 
 		  HAL_Delay(1);
 		  rx_data[0]='}';
 		  rx_data[1]='~';
 		  rx_data[2]='K';
+		  /*
+		  rx_data[0]='{';
+		  rx_data[1]='|';
+		  rx_data[2]=70;
+		  */
 		  NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,CABLE_CAM_PAYLOAD,TRUE);
 		  clear_tim9_flag(FLAG_COMM);
 	  }
@@ -179,10 +188,11 @@ int main(void)
 		  HAL_UART_Receive_IT(&huart2,rx_data,1);
 	  }// FIN DEBUG
 
+	  // Message provenant du module bluetooth
 	  if(get_uart_flag(1)){
 		  read_buffer(rx_data,3);
 		  //HAL_Delay(10);
-		  HAL_UART_Transmit_IT(&huart2,rx_data,UART1_BUFFER_SIZE);  // Envoi sur la console
+		  //HAL_UART_Transmit_IT(&huart2,rx_data,UART1_BUFFER_SIZE);  // Envoi sur la console
 		  NRF24L01_Transmit(&hspi3,cable_cam_add,rx_data,CABLE_CAM_PAYLOAD,TRUE);
 		  clear_uart_flag(1);
 		  clear_keepalive_counter();
@@ -196,23 +206,26 @@ int main(void)
 		  clear_uart_error_flag(1);
 	  }
 
-	  NRF24L01_Status = NRF24L01_Read_Status(&hspi3);
+	  //NRF24L01_Status = NRF24L01_Read_Status(&hspi3);
+	  IRQ_pin_state = HAL_GPIO_ReadPin(IRQ_GPIO_Port,IRQ_Pin);
 	  // NRF24L01
-	  if(get_IRQ_flag()){
+	  if(get_IRQ_flag()||(!(IRQ_pin_state))){
 		  NRF24L01_Status = NRF24L01_Read_Status(&hspi3);
 
 		  if(NRF24L01_Status & (1<<TX_DS)){
 			  NRF24L01_Clear_TX_DS(&hspi3,NRF24L01_Status);
-			  HAL_UART_Transmit_IT(&huart2,"T",1);
-
+			  comm_status = 'T';
+			  //HAL_UART_Transmit_IT(&huart2,&comm_status,1);
+			  /*
 			  if(flag_telemetrie == TELEMETRIE_DEMANDE){
 				  NRF24L01_Mode(&hspi3,PRX);
 				  clear_keepalive_counter();
 				  flag_telemetrie = TELEMETRIE_WAIT;
-			  }
+			  }*/
 		  }
 		  if(NRF24L01_Status & (1<<MAX_RT)){
-			  HAL_UART_Transmit_IT(&huart2,"E",1);	// DEBUG
+			  comm_status = 'E';
+			  //HAL_UART_Transmit_IT(&huart2,&comm_status,1);	// DEBUG
 			  //rx_data[0]='\n';								// DEBUG
 			  //rx_data[1]='\r';								// DEBUG
 			  //HAL_UART_Transmit_IT(&huart2,rx_data,2);		// DEBUG
@@ -221,7 +234,7 @@ int main(void)
 		  }
 
 		  if(NRF24L01_Status & (1<<RX_DR)){
-			  telemetrie_data[0]=NRF24L01_Read_Data_Pipe_Number(&hspi3,NRF24L01_Status);
+			  pipe_nb = NRF24L01_Read_Data_Pipe_Number(&hspi3,NRF24L01_Status);
 			  NRF24L01_Read_RX_Payload(&hspi3,telemetrie_data,RX_PIPE_1_PAYLOAD);
 			  NRF24L01_Clear_RX_DR(&hspi3,NRF24L01_Status);
 			  flag_telemetrie = TELEMETRIE_RX;
@@ -231,24 +244,21 @@ int main(void)
 			  NRF24L01_Activation_Control(&hspi3,STANDBY);
 			  NRF24L01_Mode(&hspi3,PTX);
 			  NRF24L01_Flush(&hspi3,TX);
-			  HAL_UART_Transmit_IT(&huart2,"R",1);
+			  comm_status = 'R';
+			  HAL_UART_Transmit_IT(&huart2,&comm_status,1);
+		  }
+		  pipe_nb = NRF24L01_Read_Data_Pipe_Number(&hspi3,NRF24L01_Status);
+		  if(pipe_nb < 7){
 			  NRF24L01_Flush(&hspi3,RX);
 		  }
-
-		  /*
-		  rx_data[0]=NRF24L01_Read_Data_Pipe_Number(&hspi3,NRF24L01_Status);
-		  if((rx_data[0]>>1)==1){
-			  NRF24L01_Status =  NRF24L01_Status | (1<<RX_DR);
-		  }
-		  */
 		  clear_IRQ_flag();
 	  }
 
 	  if(flag_telemetrie == TELEMETRIE_RX){
 		  flag_telemetrie = 0;
-		  //HAL_UART_Transmit_IT(&huart2,telemetrie_data,RX_PIPE_1_PAYLOAD);
-		  telemetrie_data[0]='\n';
-		  telemetrie_data[1]='\r';
+		  HAL_UART_Transmit_IT(&huart2,telemetrie_data,RX_PIPE_1_PAYLOAD);
+		  //telemetrie_data[0]='\n';
+		  //telemetrie_data[1]='\r';
 		  //HAL_UART_Transmit_IT(&huart2,telemetrie_data,2);
 
 	  }
