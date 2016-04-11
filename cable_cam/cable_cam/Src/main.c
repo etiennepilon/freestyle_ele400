@@ -132,13 +132,13 @@ int main(void)
 //	  memcpy(rx_data,"{|}",3);
 //	  parseRXMessages(rx_data,&controlStruct);
 //	  wallDetection(&controlStruct,&telemetryStruct);
-      TIM_PWM_SetPulse(&htim1,(controlStruct.torque*50)+3000);
+	  TIM_PWM_SetPulse(&htim1,(controlStruct.torque*50)+2500);
       if (controlStruct.requestTelem == 1)
       {
     	  HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
     	  NRF24L01_Mode(&hspi3,PTX);
     	  HAL_Delay(10);
-    	  NRF24L01_Transmit(&hspi3,0x555555,&utelemetry.aTelemetry,9,TRUE);
+    	  NRF24L01_Transmit(&hspi3,0x385338,utelemetry.aTelemetry,9,TRUE);
 		  clear_flag_IRQ();
     	  NRF24L01_Mode(&hspi3,PRX);
     	  controlStruct.requestTelem = 0;
