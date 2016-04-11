@@ -16,6 +16,8 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.ShapeDrawable;
+import android.graphics.drawable.shapes.RectShape;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.view.View;
@@ -90,6 +92,10 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void onClick(View view) {
                 setup();
+                textStatus.setText("Resetting Bluetooth module");
+                if(myThreadConnectBTdevice!=null){
+                    myThreadConnectBTdevice.cancel();
+                }
             }
         });
         stopBtn = (Button) findViewById(R.id.stopBtn);
@@ -97,13 +103,15 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void onClick(View view) {
                 if (myThreadConnected != null) {
-                    byte[] msg = messageFactory.getCommandMessage(CableCamMessageFactory.EMERGENCY_STOP).getBytes();
+                    byte[] msg = messageFactory.getTorqueMessageChar(50).getBytes();
+                    //byte[] msg = messageFactory.getCommandMessage(CableCamMessageFactory.EMERGENCY_STOP).getBytes();
                     myThreadConnected.write(msg);
                 }
                 if (speedSlider != null){
                     speedSlider.setProgress(50);
                 }
             }
+
         });
         //inputPane = (LinearLayout)findViewById(R.id.);
         //inputField = (EditText)findViewById(R.id.input);
@@ -128,11 +136,26 @@ public class MainActivity extends ActionBarActivity {
         }
         // - Speed slider
         speedSlider = (SeekBar)findViewById(R.id.speedSlider);
+
+        ShapeDrawable thumb = new ShapeDrawable( new RectShape() );
+        thumb.getPaint().setColor( 0x000000 ); //0x00FF00
+        thumb.setIntrinsicHeight( 80 );
+        thumb.setIntrinsicWidth( 30 );
+        speedSlider.setThumb(thumb);
+
         speedSlider.setProgress(50);
+
+
+
         speedSlider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             public void onStopTrackingTouch(SeekBar bar)
             {
-                int value = bar.getProgress(); // the value of the seekBar progress
+                //int value = bar.getProgress(); // the value of the seekBar progress
+                speedSlider.setProgress(50);
+                if (myThreadConnected != null){
+                    byte[] msg = messageFactory.getTorqueMessageChar(50).getBytes();
+                    myThreadConnected.write(msg);
+                }
             }
 
             public void onStartTrackingTouch(SeekBar bar)
@@ -199,7 +222,7 @@ public class MainActivity extends ActionBarActivity {
             pairedDeviceAdapter = new ArrayAdapter<BluetoothDevice>(this,
                     android.R.layout.simple_list_item_1, pairedDeviceArrayList);
             listViewPairedDevice.setAdapter(pairedDeviceAdapter);
-
+            listViewPairedDevice.setVisibility(View.VISIBLE);
             listViewPairedDevice.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
                 @Override
