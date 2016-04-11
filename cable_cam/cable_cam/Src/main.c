@@ -129,10 +129,10 @@ int main(void)
 //      TIM_PWM_SetPulse(&htim1,000);
 //	  n = sprintf(printBuffer,"%d, %d\n\r",utelemetry.telemetry.distanceFront,utelemetry.telemetry.distanceBack);
 //	  HAL_UART_Transmit(&huart2,printBuffer,n,1000);
-	  memcpy(rx_data,"{|}",3);
+//	  memcpy(rx_data,"{|}",3);
 //	  parseRXMessages(rx_data,&controlStruct);
 //	  wallDetection(&controlStruct,&telemetryStruct);
-//      TIM_PWM_SetPulse(&htim1,(controlStruct.torque*50)+2500);
+      TIM_PWM_SetPulse(&htim1,(controlStruct.torque*50)+3000);
       if (controlStruct.requestTelem == 1)
       {
     	  HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
